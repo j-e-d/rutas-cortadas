@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rutas cortadas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column, road-sign typography, charts full column width */
+:root{
+  --bg:#f7f7f4;--surface:#fcfcfb;--fg:#16181a;--fg2:#55585c;--muted:#8a8d90;--grid:#e3e3de;--line:#d3d3cc;
+  --s1:#fab219;--s2:#ec835a;--s3:#d03b3b;
+  --c0:#2a78d6;--c1:#1baf7a;--c2:#eb6834;--c3:#eda100;--c4:#e87ba4;--c5:#008300;--c6:#4a3aa7;--c7:#e34948;--c8:#b9b8b1;
+  --display:"Archivo",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121312;--surface:#1a1a19;--fg:#f1f1ee;--fg2:#c3c2b7;--muted:#8d8c85;--grid:#2c2c2a;--line:#3a3a37;
+  --c0:#3987e5;--c1:#199e70;--c2:#d95926;--c3:#c98500;--c4:#d55181;--c5:#008300;--c6:#9085e9;--c7:#e66767;--c8:#55554f;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121312;--surface:#1a1a19;--fg:#f1f1ee;--fg2:#c3c2b7;--muted:#8d8c85;--grid:#2c2c2a;--line:#3a3a37;
+  --c0:#3987e5;--c1:#199e70;--c2:#d95926;--c3:#c98500;--c4:#d55181;--c5:#008300;--c6:#9085e9;--c7:#e66767;--c8:#55554f;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--display)}
+main{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:32px 64px;display:grid;gap:40px}
+h1{font-weight:800;font-size:clamp(28px,5vw,44px);line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:19px;margin:0;text-wrap:balance}
+p{margin:0;max-width:68ch;color:var(--fg2)}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+header{display:grid;gap:12px}
+section{display:grid;gap:12px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0;position:relative}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--fg2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:2px;display:inline-block}
+.scroll{overflow-x:auto}
+svg text{fill:var(--muted);font:11px var(--mono)}
+.tip{position:absolute;pointer-events:none;background:var(--fg);color:var(--bg);font:12px/1.4 var(--mono);padding:6px 8px;border-radius:4px;max-width:280px;z-index:2;white-space:pre-line}
+.stats{display:flex;flex-wrap:wrap;gap:24px}
+.stat b{display:block;font:800 28px var(--display);font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--fg2)}
+.note{font-size:13px;color:var(--muted)}
+#hm{display:block}
+.perm{display:grid;gap:8px;font-size:14px}
+.perm div{display:grid;gap:2px}
+.perm b{font-weight:600}
+.perm span{color:var(--fg2)}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="eyebrow" id="range">Vialidad Nacional</div>
+  <h1>Rutas nacionales cortadas y restringidas</h1>
+  <p>Estado diario de cada tramo de ruta nacional, reconstruido desde el historial de <code>j-e-d/estadorutas</code>, que guarda la tabla de Vialidad varias veces por día. Cada tramo mantiene su estado hasta el próximo cambio, así que todo se mide en tiempo: un corte de 6 horas cuenta como un cuarto de día.</p>
+  <div class="stats" id="stats"></div>
+</header>
+
+<section>
+  <h2>Tramos afectados por día</h2>
+  <p>Promedio de tramos no habilitados a lo largo de cada día.</p>
+  <div class="legend" id="lg-state"></div>
+  <div class="panel"><svg id="area" width="100%" role="img" aria-label="Tramos no habilitados por día, apilados por estado"></svg></div>
+</section>
+
+<section>
+  <h2>Los 40 tramos con más días afectados</h2>
+  <p>Una fila por tramo, un píxel por día. El color es el estado que más horas duró ese día y la intensidad, la parte del día que estuvo afectado. Las marcas negras debajo de una fila son días en que el estado y la observación no coinciden.</p>
+  <div class="legend" id="lg-state2"></div>
+  <div class="panel scroll"><canvas id="hm"></canvas></div>
+</section>
+
+<section>
+  <h2>Causas por mes</h2>
+  <p>Días-tramo no habilitados (24 horas de un tramo = 1), según palabras clave de la columna de observaciones. “Sin detalle” son cortes o restricciones sin texto que explique el motivo.</p>
+  <div class="legend" id="lg-cause"></div>
+  <div class="panel"><svg id="bars" width="100%" role="img" aria-label="Días-tramo afectados por mes, apilados por causa"></svg></div>
+</section>
+
+<section>
+  <h2>Cuánto dura un corte</h2>
+  <p>Cada punto es un episodio: un tramo no habilitado desde que cambia de estado hasta que vuelve a estar habilitado. La raya vertical es la mediana. Escala logarítmica; se omiten episodios de menos de <span id="minh"></span> horas, que suelen ser correcciones de carga.</p>
+  <div class="panel"><svg id="dur" width="100%" role="img" aria-label="Duración de episodios por causa y cortes totales en pasos a Chile"></svg></div>
+</section>
+
+<section>
+  <h2>Restricciones permanentes</h2>
+  <p>Estos tramos figuran como no habilitados durante todo el período y no se incluyen en los gráficos.</p>
+  <div class="panel perm" id="perm"></div>
+</section>
+
+<p class="note">El estado y la observación de Vialidad no siempre coinciden: restricciones por viento cargadas como “corte total”, o tramos restringidos cuya observación dice solo “Transitable”. Estos gráficos usan el estado tal como lo publica Vialidad; esos casos suman <span id="conf"></span> días-tramo y están marcados en la línea de tiempo. Cuando una observación no dice la causa, se toma la del resto del mismo episodio. Fuente: argentina.gob.ar/obras-publicas/vialidad-nacional/estado-de-las-rutas. Antes de dic 2024 la tabla no tenía columna de estado y no se incluye. Se omiten las capturas con errores de la API de Google Sheets. <span id="gen"></span></p>
+</main>
+<div class="tip" id="tip" hidden></div>
+<script>
+(async()=>{
+const D = await (await fetch("data.json")).json();
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const STATES = ["Restringida","Corte parcial","Corte total"], SV=["--s1","--s2","--s3"];
+const CV = D.causes.map((_,i)=>"--c"+i);
+const start = new Date(D.start+"T00:00:00Z"), N = D.daily.length;
+const day = i => new Date(+start + i*864e5);
+const fmt = d => d.toLocaleDateString("es-AR",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"});
+const tip = document.getElementById("tip");
+function showTip(e, text){ tip.textContent=text; tip.hidden=false;
+  const x=Math.min(e.pageX+14, scrollX+innerWidth-tip.offsetWidth-8); tip.style.left=x+"px"; tip.style.top=(e.pageY+14)+"px"; }
+const hideTip = () => tip.hidden = true;
+const legend = (el, names, vars) => document.getElementById(el).innerHTML =
+  names.map((n,i)=>`<span><i style="background:var(${vars[i]})"></i>${n}</span>`).join("");
+const my = d => d.toLocaleDateString("es-AR",{month:"short",year:"numeric",timeZone:"UTC"});
+document.getElementById("range").textContent = `Vialidad Nacional · ${my(new Date(D.start+"T00:00:00Z"))} – ${my(new Date(D.end))}`;
+document.getElementById("conf").textContent = D.conflict_days;
+document.getElementById("minh").textContent = D.min_episode_h;
+document.getElementById("gen").textContent = `Actualizado el ${fmt(new Date(D.generated))}.`;
+legend("lg-state",STATES,SV); legend("lg-state2",STATES,SV); legend("lg-cause",D.causes,CV);
+const NS="http://www.w3.org/2000/svg";
+const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e};
+
+// stats
+const pk = new Date(D.peak.at);
+const pkTxt = pk.toLocaleString("es-AR",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",hourCycle:"h23",timeZone:"America/Argentina/Buenos_Aires"});
+document.getElementById("stats").innerHTML = [
+  [D.n_sections_affected,"tramos con al menos un día afectado"],
+  [D.peak.n,`tramos afectados a la vez, el máximo (${pkTxt})`],
+  [D.total_closed_days.toLocaleString("es-AR"),"días-tramo con corte total"]].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+
+function months(){ const m=[]; for(let i=0;i<N;i++){const d=day(i); if(d.getUTCDate()===1) m.push([i,d]);} return m; }
+
+// area chart
+function drawArea(){
+  const svg=document.getElementById("area"); svg.innerHTML="";
+  const W=svg.clientWidth, H=240, m={l:36,r:8,t:8,b:24}; svg.setAttribute("height",H);
+  const x=i=>m.l+i*(W-m.l-m.r)/(N-1);
+  const max=Math.max(...D.daily.map(d=>d[0]+d[1]+d[2]));
+  const top=Math.ceil(max/10)*10, y=v=>H-m.b-v*(H-m.t-m.b)/top;
+  for(let v=0;v<=top;v+=top/4){ el("line",{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:css("--grid")},svg);
+    el("text",{x:m.l-6,y:y(v)+4,"text-anchor":"end"},svg).textContent=v; }
+  months().forEach(([i,d])=>{ if(d.getUTCMonth()%3) return;
+    el("text",{x:x(i),y:H-6,"text-anchor":"middle"},svg).textContent=d.toLocaleDateString("es-AR",{month:"short",year:"2-digit",timeZone:"UTC"}); });
+  // stack: total at bottom (most severe), then parcial, then restringida
+  const order=[2,1,0]; let base=new Array(N).fill(0);
+  order.forEach(k=>{ const upper=D.daily.map((d,i)=>base[i]+d[k]);
+    let p=`M${x(0)},${y(upper[0])}`; for(let i=1;i<N;i++) p+=`L${x(i)},${y(upper[i])}`;
+    for(let i=N-1;i>=0;i--) p+=`L${x(i)},${y(base[i])}`;
+    el("path",{d:p+"Z",fill:css(SV[k]),"fill-opacity":.9,stroke:css("--surface"),"stroke-width":1},svg); base=upper; });
+  const cross=el("line",{y1:m.t,y2:H-m.b,stroke:css("--fg2"),"stroke-width":1,visibility:"hidden"},svg);
+  const hit=el("rect",{x:m.l,y:m.t,width:W-m.l-m.r,height:H-m.t-m.b,fill:"transparent"},svg);
+  hit.addEventListener("mousemove",e=>{ const r=svg.getBoundingClientRect();
+    const i=Math.max(0,Math.min(N-1,Math.round((e.clientX-r.left-m.l)/(W-m.l-m.r)*(N-1)))), d=D.daily[i];
+    cross.setAttribute("x1",x(i)); cross.setAttribute("x2",x(i)); cross.setAttribute("visibility","visible");
+    showTip(e,`${fmt(day(i))} (promedio del día)\nCorte total   ${d[2].toFixed(1)}\nCorte parcial ${d[1].toFixed(1)}\nRestringida   ${d[0].toFixed(1)}`); });
+  hit.addEventListener("mouseleave",()=>{hideTip();cross.setAttribute("visibility","hidden")});
+}
+
+// heatmap
+function drawHeat(){
+  const cv=document.getElementById("hm"), dpr=devicePixelRatio||1;
+  const LW=300, avail=Math.max(640, cv.parentElement.clientWidth-34), cellW=(avail-LW)/N, rowH=14, T=D.top;
+  const W=avail, H=T.length*rowH+22;
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+"px"; cv.style.height=H+"px";
+  const g=cv.getContext("2d"); g.scale(dpr,dpr);
+  const cols=["transparent",css("--s1"),css("--s2"),css("--s3")];
+  g.font="11px 'IBM Plex Mono', monospace"; g.textBaseline="middle";
+  T.forEach((t,r)=>{ const yy=r*rowH;
+    g.fillStyle=css("--fg2"); g.textAlign="left";
+    let lab=`RN ${t.ruta} · ${t.region} · ${t.tramo}`; while(g.measureText(lab).width>LW-12 && lab.length>4) lab=lab.slice(0,-2);
+    if(lab!==`RN ${t.ruta} · ${t.region} · ${t.tramo}`) lab=lab.slice(0,-1)+"…";
+    g.fillText(lab,0,yy+rowH/2);
+    g.fillStyle=css("--grid"); g.fillRect(LW,yy+2,cellW*N,rowH-4);
+    for(let i=0;i<N;i++){ const s=t.sev[i]; if(s>"0"){ g.globalAlpha=.25+.75*(+t.frac[i])/9; g.fillStyle=cols[+s]; g.fillRect(LW+i*cellW,yy+2,cellW,rowH-4); g.globalAlpha=1; }
+      if(t.conf[i]==="1"){ g.fillStyle=css("--fg"); g.fillRect(LW+i*cellW,yy+rowH-2,Math.max(1,cellW),2);} } });
+  g.fillStyle=css("--muted"); g.textAlign="center";
+  months().forEach(([i,d])=>{ if(d.getUTCMonth()%3) return; const xx=LW+i*cellW;
+    g.fillRect(xx,T.length*rowH,1,4);
+    g.fillText(d.toLocaleDateString("es-AR",{month:"short",year:"2-digit",timeZone:"UTC"}),xx,T.length*rowH+13); });
+  cv.onmousemove=e=>{ const r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+    const row=Math.floor(my/rowH), i=Math.floor((mx-LW)/cellW);
+    if(row<0||row>=T.length||i<0||i>=N) return hideTip(); const t=T[row], s=t.sev[i], c=t.cause[i];
+    const st=s==="0"?"Habilitada":`${STATES[+s-1]}, ~${Math.round(+t.frac[i]/9*24)} h`;
+    showTip(e,`RN ${t.ruta} · ${t.region}\n${t.tramo}\n${fmt(day(i))}: ${st}${c!=="."?"\nCausa: "+D.causes[+c]:""}${t.conf[i]==="1"?"\nEl estado y la observación no coinciden":""}\nEn total: ${t.days_bad} días afectado, ${t.days_total} con corte total`); };
+  cv.onmouseleave=hideTip;
+}
+
+// monthly cause bars
+function drawBars(){
+  const svg=document.getElementById("bars"); svg.innerHTML="";
+  const ms=Object.keys(D.monthly), W=svg.clientWidth, H=260, m={l:44,r:8,t:8,b:24}; svg.setAttribute("height",H);
+  const tots=ms.map(k=>Object.values(D.monthly[k]).reduce((a,b)=>a+b,0));
+  const top=Math.ceil(Math.max(...tots)/200)*200, y=v=>H-m.b-v*(H-m.t-m.b)/top;
+  const bw=(W-m.l-m.r)/ms.length;
+  for(let v=0;v<=top;v+=top/4){ el("line",{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:css("--grid")},svg);
+    el("text",{x:m.l-6,y:y(v)+4,"text-anchor":"end"},svg).textContent=v; }
+  ms.forEach((k,j)=>{ let acc=0; const x0=m.l+j*bw+1, w=Math.max(2,bw-2);
+    D.causes.forEach((c,ci)=>{ const v=D.monthly[k][c]||0; if(!v) return;
+      const r=el("rect",{x:x0,y:y(acc+v)+1,width:w,height:Math.max(0,y(acc)-y(acc+v)-1),fill:css(CV[ci])},svg); acc+=v;
+      r.addEventListener("mousemove",e=>showTip(e,`${k}\n${c}: ${Math.round(v)} días-tramo\nTotal del mes: ${Math.round(tots[j])}`)); r.addEventListener("mouseleave",hideTip); });
+    const [yy,mm]=k.split("-"); if((+mm-1)%3===0) el("text",{x:x0+w/2,y:H-6,"text-anchor":"middle"},svg).textContent=new Date(Date.UTC(+yy,+mm-1,1)).toLocaleDateString("es-AR",{month:"short",year:"2-digit",timeZone:"UTC"}); });
+}
+const fmtH = h => h<48 ? `${Math.round(h)} h` : `${(h/24).toFixed(h<240?1:0)} días`;
+function drawDur(){
+  const svg=document.getElementById("dur"); svg.innerHTML="";
+  const W=svg.clientWidth, narrow=W<560, LW=narrow?130:210, rowH=28, m={t:8,r:12,b:28};
+  const rows=[];
+  D.causes.forEach((c,ci)=>{ const pts=D.durations.filter(d=>d.c===ci); if(pts.length) rows.push({label:c,pts,col:CV[ci]}); });
+  rows.sort((a,b)=>b.pts.length-a.pts.length);
+  const sep=rows.length;
+  D.passes.forEach(p=>rows.push({label:p.label,pts:p.closures.map(c=>({...c,s:p.label})),col:"--s3",pass:true}));
+  const H=m.t+rows.length*rowH+24+m.b; svg.setAttribute("height",H);
+  const lo=Math.log(2), hi=Math.log(24*400), x=h=>LW+(Math.log(Math.max(2,h))-lo)/(hi-lo)*(W-LW-m.r);
+  const ticks=[[2,"2 h"],[12,"12 h"],[24,"1 día"],[168,"1 sem"],[720,"1 mes"],[4320,"6 meses"]];
+  const y0=r=>m.t+r*rowH+(r>=sep?24:0);
+  ticks.forEach(([h,l])=>{ el("line",{x1:x(h),x2:x(h),y1:m.t,y2:H-m.b,stroke:css("--grid")},svg);
+    el("text",{x:x(h),y:H-8,"text-anchor":"middle"},svg).textContent=l; });
+  el("text",{x:0,y:y0(sep)-8,style:"font-weight:500;fill:var(--fg2)"},svg).textContent="Cortes totales en pasos a Chile";
+  rows.forEach((r,ri)=>{ const yc=y0(ri)+rowH/2;
+    el("text",{x:0,y:yc+4,style:"fill:var(--fg2)"},svg).textContent=`${r.label} (${r.pts.length})`;
+    r.pts.forEach((d,i)=>{ const jit=((i*37)%11-5)*1.4;
+      const c=el("circle",{cx:x(d.h),cy:yc+jit,r:3.5,fill:css(r.col),"fill-opacity":.55,stroke:css("--surface"),"stroke-width":1},svg);
+      c.addEventListener("mousemove",e=>showTip(e,`${d.s}\nDesde ${fmt(new Date(d.a+"T00:00:00Z"))}\nDuración: ${fmtH(d.h)}${d.open?" (sigue)":""}`)); c.addEventListener("mouseleave",hideTip); });
+    const hs=r.pts.map(d=>d.h).sort((a,b)=>a-b), med=hs[Math.floor(hs.length/2)];
+    el("line",{x1:x(med),x2:x(med),y1:yc-10,y2:yc+10,stroke:css("--fg"),"stroke-width":2},svg);
+    el("text",{x:Math.min(x(med)+5,W-m.r-40),y:yc-7,style:"fill:var(--fg)"},svg).textContent=fmtH(med); });
+}
+document.getElementById("perm").innerHTML = D.permanent.map(p=>`<div><b>RN ${p.ruta} · ${p.region} · ${p.tramo}</b><span>${p.estado[0]+p.estado.slice(1).toLowerCase()} el ${Math.round(p.share*100)}% del período.${p.obs?` “${p.obs}”`:""}</span></div>`).join("");
+function all(){drawArea();drawHeat();drawBars();drawDur();}
+all(); addEventListener("resize",()=>{clearTimeout(window._r);window._r=setTimeout(all,150)});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",all);
+new MutationObserver(all).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+document.fonts&&document.fonts.ready.then(drawHeat);
+})();
+</script>
+</body>
+</html>
