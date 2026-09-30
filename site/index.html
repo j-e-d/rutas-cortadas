@@ -11,14 +11,17 @@
   --bg:#f7f7f4;--surface:#fcfcfb;--fg:#16181a;--fg2:#55585c;--muted:#8a8d90;--grid:#e3e3de;--line:#d3d3cc;
   --s1:#fab219;--s2:#ec835a;--s3:#d03b3b;
   --c0:#2a78d6;--c1:#1baf7a;--c2:#eb6834;--c3:#eda100;--c4:#e87ba4;--c5:#008300;--c6:#4a3aa7;--c7:#e34948;--c8:#b9b8b1;
+  --m0:#b4b4ac;--m1:#9ec5f4;--m2:#5598e7;--m3:#2a78d6;--m4:#1c5cab;--m5:#0d366b;
   --display:"Archivo",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#121312;--surface:#1a1a19;--fg:#f1f1ee;--fg2:#c3c2b7;--muted:#8d8c85;--grid:#2c2c2a;--line:#3a3a37;
-  --c0:#3987e5;--c1:#199e70;--c2:#d95926;--c3:#c98500;--c4:#d55181;--c5:#008300;--c6:#9085e9;--c7:#e66767;--c8:#55554f;color-scheme:dark}}
+  --c0:#3987e5;--c1:#199e70;--c2:#d95926;--c3:#c98500;--c4:#d55181;--c5:#008300;--c6:#9085e9;--c7:#e66767;--c8:#55554f;
+  --m0:#55554f;--m1:#184f95;--m2:#256abf;--m3:#3987e5;--m4:#86b6ef;--m5:#cde2fb;color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#121312;--surface:#1a1a19;--fg:#f1f1ee;--fg2:#c3c2b7;--muted:#8d8c85;--grid:#2c2c2a;--line:#3a3a37;
-  --c0:#3987e5;--c1:#199e70;--c2:#d95926;--c3:#c98500;--c4:#d55181;--c5:#008300;--c6:#9085e9;--c7:#e66767;--c8:#55554f;color-scheme:dark}
+  --c0:#3987e5;--c1:#199e70;--c2:#d95926;--c3:#c98500;--c4:#d55181;--c5:#008300;--c6:#9085e9;--c7:#e66767;--c8:#55554f;
+  --m0:#55554f;--m1:#184f95;--m2:#256abf;--m3:#3987e5;--m4:#86b6ef;--m5:#cde2fb;color-scheme:dark}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--display)}
 main{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:32px 64px;display:grid;gap:40px}
 h1{font-weight:800;font-size:clamp(28px,5vw,44px);line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-.01em}
@@ -43,6 +46,14 @@ svg text{fill:var(--muted);font:11px var(--mono)}
 .perm div{display:grid;gap:2px}
 .perm b{font-weight:600}
 .perm span{color:var(--fg2)}
+.map{padding:0;overflow:hidden}
+#map{display:block;width:100%;cursor:grab;touch-action:pan-y}
+#map.drag{cursor:grabbing}
+.zoom{position:absolute;top:12px;right:12px;display:grid;gap:4px}
+.zoom button{width:32px;height:32px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--fg);font:500 16px var(--mono);cursor:pointer;padding:0}
+.zoom button:hover{background:var(--grid)}
+.legend i.line{height:3px}
+.legend i.dash{height:3px;background:repeating-linear-gradient(90deg,var(--fg2) 0 4px,transparent 4px 7px)}
 </style>
 </head>
 <body>
@@ -59,6 +70,17 @@ svg text{fill:var(--muted);font:11px var(--mono)}
   <p>Promedio de tramos no habilitados a lo largo de cada día.</p>
   <div class="legend" id="lg-state"></div>
   <div class="panel"><svg id="area" width="100%" role="img" aria-label="Tramos no habilitados por día, apilados por estado"></svg></div>
+</section>
+
+<section id="map-section">
+  <h2>Dónde se cortan las rutas</h2>
+  <p>Cada tramo sigue la traza real de la ruta. El color indica cuántos días estuvo no habilitado en todo el período, sumando restricciones y cortes. En gris, los tramos sin ningún día afectado.</p>
+  <div class="legend" id="lg-map"></div>
+  <div class="panel map">
+    <canvas id="map" role="img" aria-label="Mapa de las rutas nacionales, con cada tramo coloreado según los días que estuvo no habilitado"></canvas>
+    <div class="zoom"><button type="button" id="z-in" aria-label="Acercar">+</button><button type="button" id="z-out" aria-label="Alejar">−</button><button type="button" id="z-reset" aria-label="Ver todo el país">⌂</button></div>
+  </div>
+  <p class="note" id="map-note"></p>
 </section>
 
 <section>
@@ -87,12 +109,12 @@ svg text{fill:var(--muted);font:11px var(--mono)}
   <div class="panel perm" id="perm"></div>
 </section>
 
-<p class="note">El estado y la observación de Vialidad no siempre coinciden: restricciones por viento cargadas como “corte total”, o tramos restringidos cuya observación dice solo “Transitable”. Estos gráficos usan el estado tal como lo publica Vialidad; esos casos suman <span id="conf"></span> días-tramo y están marcados en la línea de tiempo. Cuando una observación no dice la causa, se toma la del resto del mismo episodio. Fuente: argentina.gob.ar/obras-publicas/vialidad-nacional/estado-de-las-rutas. Antes de dic 2024 la tabla no tenía columna de estado y no se incluye. Se omiten las capturas con errores de la API de Google Sheets. <span id="gen"></span></p>
+<p class="note">El estado y la observación de Vialidad no siempre coinciden: restricciones por viento cargadas como “corte total”, o tramos restringidos cuya observación dice solo “Transitable”. Estos gráficos usan el estado tal como lo publica Vialidad; esos casos suman <span id="conf"></span> días-tramo y están marcados en la línea de tiempo. Cuando una observación no dice la causa, se toma la del resto del mismo episodio. Fuente: argentina.gob.ar/obras-publicas/vialidad-nacional/estado-de-las-rutas. Antes de dic 2024 la tabla no tenía columna de estado y no se incluye. Se omiten las capturas con errores de la API de Google Sheets. Trazas de las rutas: Dirección Nacional de Vialidad, SIG Vial (Red Vial Nacional 2025). Límites provinciales y localidades: Instituto Geográfico Nacional. <span id="gen"></span></p>
 </main>
 <div class="tip" id="tip" hidden></div>
 <script>
 (async()=>{
-const D = await (await fetch("data.json")).json();
+const [D, GEO] = await Promise.all([fetch("data.json").then(r=>r.json()), fetch("geo.json").then(r=>r.json()).catch(()=>null)]);
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const STATES = ["Restringida","Corte parcial","Corte total"], SV=["--s1","--s2","--s3"];
 const CV = D.causes.map((_,i)=>"--c"+i);
@@ -220,7 +242,101 @@ function drawDur(){
     el("text",{x:Math.min(x(med)+5,W-m.r-40),y:yc-7,style:"fill:var(--fg)"},svg).textContent=fmtH(med); });
 }
 document.getElementById("perm").innerHTML = D.permanent.map(p=>`<div><b>RN ${p.ruta} · ${p.region} · ${p.tramo}</b><span>${p.estado[0]+p.estado.slice(1).toLowerCase()} el ${Math.round(p.share*100)}% del período.${p.obs?` “${p.obs}”`:""}</span></div>`).join("");
-function all(){drawArea();drawHeat();drawBars();drawDur();}
+
+// map: sections follow Vialidad's centrelines (geo.json), coloured by days not open
+const MAP = (()=>{
+  if(!GEO){ document.getElementById("map-section").hidden=true; return null; }
+  const cv=document.getElementById("map"), R=6371;
+  // transverse Mercator centred on 64° W: keeps Argentina's long north-south shape undistorted
+  const proj=(lon,lat)=>{ const l=(lon+64)*Math.PI/180, f=lat*Math.PI/180, B=Math.cos(f)*Math.sin(l);
+    return [R*.5*Math.log((1+B)/(1-B)), -R*Math.atan2(Math.tan(f),Math.cos(l))]; };
+  const dec=a=>{ const o=new Float32Array(a.length); let x=0,y=0;
+    for(let i=0;i<a.length;i+=2){ x+=a[i]; y+=a[i+1]; const p=proj(x/GEO.scale,y/GEO.scale); o[i]=p[0]; o[i+1]=p[1]; } return o; };
+  const provs=GEO.provinces.map(dec);
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  provs.forEach(r=>{ for(let i=0;i<r.length;i+=2){ x0=Math.min(x0,r[i]); x1=Math.max(x1,r[i]); y0=Math.min(y0,r[i+1]); y1=Math.max(y1,r[i+1]); } });
+  const tot=new Map(D.sections.map(t=>[t.slice(0,3).join("|"),t]));
+  const perm=new Map(D.permanent.map(p=>[[p.region,p.ruta,p.tramo].join("|"),p]));
+  const BINS=[1,5,20,80], bin=d=>1+BINS.filter(b=>d>=b).length;
+  const secs=GEO.sections.map(s=>{ const key=s.k.join("|"), t=tot.get(key), parts=s.l.map(dec);
+    let bx0=1e9,by0=1e9,bx1=-1e9,by1=-1e9;
+    parts.forEach(r=>{ for(let i=0;i<r.length;i+=2){ bx0=Math.min(bx0,r[i]); bx1=Math.max(bx1,r[i]); by0=Math.min(by0,r[i+1]); by1=Math.max(by1,r[i+1]); } });
+    return {k:s.k, parts, approx:s.c==="m", old:!!s.old, days:t?t[3]:0, closed:t?t[4]:0, cause:t?t[5]:-1, perm:perm.get(key), box:[bx0,by0,bx1,by1]}; })
+    .filter(s=>!s.old||s.days>0||s.perm);
+  // draw order: open sections first, then by days so the worst end up on top
+  secs.sort((a,b)=>(a.perm?-1:a.days)-(b.perm?-1:b.days));
+  const missing=D.sections.filter(t=>!GEO.sections.some(s=>s.k.join("|")===t.slice(0,3).join("|"))).length;
+  document.getElementById("map-note").textContent =
+    `Pasá el cursor o tocá un tramo para ver el detalle. Para acercar usá los botones, pellizcá o girá la rueda con Ctrl; arrastrá para mover. `+
+    `Los tramos de trazo punteado son las restricciones permanentes, que no entran en la escala. `+
+    `La tabla de Vialidad no trae coordenadas: cada tramo se ubicó sobre la traza buscando sus extremos, y ${missing} tramos con días afectados no se pudieron ubicar y no aparecen.`;
+  document.getElementById("lg-map").innerHTML =
+    ["menos de 1 día","1 a 5","5 a 20","20 a 80","más de 80 días"].map((n,i)=>`<span><i class="line" style="background:var(--m${i+1})"></i>${n}</span>`).join("")+
+    `<span><i class="line" style="background:var(--m0)"></i>Sin días afectados</span><span><i class="dash"></i>Restricción permanente</span>`;
+  let W=0,H=0,base=1,k=1,cx=(x0+x1)/2,cy=(y0+y1)/2,hover=null;
+  const sx=x=>W/2+(x-cx)*base*k, sy=y=>H/2+(y-cy)*base*k;
+  function path(g,r){ g.moveTo(sx(r[0]),sy(r[1])); for(let i=2;i<r.length;i+=2) g.lineTo(sx(r[i]),sy(r[i+1])); }
+  function draw(){
+    const dpr=devicePixelRatio||1; W=cv.clientWidth; H=Math.round(Math.max(420,Math.min(760,innerHeight*.8)));
+    cv.style.height=H+"px"; cv.width=W*dpr; cv.height=H*dpr;
+    base=Math.min((W-24)/(x1-x0),(H-24)/(y1-y0));
+    const g=cv.getContext("2d"); g.scale(dpr,dpr); g.lineJoin=g.lineCap="round";
+    g.beginPath(); provs.forEach(r=>{path(g,r);g.closePath()});
+    g.fillStyle=css("--bg"); g.fill(); g.strokeStyle=css("--grid"); g.lineWidth=1; g.stroke();
+    const vis=s=>sx(s.box[2])>=0&&sx(s.box[0])<=W&&sy(s.box[3])>=0&&sy(s.box[1])<=H;
+    const wz=Math.min(2,Math.sqrt(k)), cols=[0,1,2,3,4,5].map(i=>css("--m"+i));
+    secs.forEach(s=>{ if(!vis(s)) return; g.beginPath(); s.parts.forEach(r=>path(g,r));
+      if(s.perm){ g.setLineDash([4,3]); g.strokeStyle=css("--fg2"); g.lineWidth=1.5*wz; }
+      else if(s.days>0){ g.strokeStyle=cols[bin(s.days)]; g.lineWidth=2.5*wz; }
+      else { g.strokeStyle=cols[0]; g.lineWidth=1*wz; }
+      g.stroke(); g.setLineDash([]); });
+    if(hover){ g.beginPath(); hover.parts.forEach(r=>path(g,r)); g.strokeStyle=css("--fg"); g.lineWidth=2.5*wz+3; g.stroke();
+      g.strokeStyle=hover.perm?css("--surface"):cols[hover.days>0?bin(hover.days):0]; g.lineWidth=2.5*wz; g.stroke(); }
+  }
+  function pick(mx,my){ let best=null,bd=10;
+    for(const s of secs){ if(sx(s.box[2])<mx-10||sx(s.box[0])>mx+10||sy(s.box[3])<my-10||sy(s.box[1])>my+10) continue;
+      for(const r of s.parts) for(let i=0;i+3<r.length;i+=2){
+        const ax=sx(r[i]),ay=sy(r[i+1]),bx=sx(r[i+2]),by=sy(r[i+3]),dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy;
+        const t=l?Math.max(0,Math.min(1,((mx-ax)*dx+(my-ay)*dy)/l)):0;
+        const d=Math.hypot(mx-ax-t*dx,my-ay-t*dy)-(s.days>0||s.perm?3:0);  // affected sections win near-ties
+        if(d<bd){bd=d;best=s;} } }
+    return best; }
+  const days=d=>d.toLocaleString("es-AR",{maximumFractionDigits:1});
+  function text(s){ let t=`RN ${s.k[1]} · ${s.k[0]}\n${s.k[2]}`;
+    if(s.perm) t+=`\nRestricción permanente (${Math.round(s.perm.share*100)}% del período)${s.perm.obs?`\n“${s.perm.obs}”`:""}`;
+    else if(s.days>0) t+=`\n${days(s.days)} días no habilitado\n${days(s.closed)} con corte total\nCausa principal: ${D.causes[s.cause]}`;
+    else t+=`\nSin días afectados en el período`;
+    if(s.old) t+=`\nTramo que ya no figura en la tabla`;
+    if(s.approx) t+=`\nUbicación aproximada sobre la traza`;
+    return t; }
+  function point(e){ const r=cv.getBoundingClientRect(), s=pick(e.clientX-r.left,e.clientY-r.top);
+    if(s!==hover){ hover=s; draw(); } s?showTip(e,text(s)):hideTip(); }
+  function zoom(f,mx=W/2,my=H/2){ const nk=Math.max(1,Math.min(60,k*f));
+    const wx=cx+(mx-W/2)/(base*k), wy=cy+(my-H/2)/(base*k);
+    k=nk; cx=wx-(mx-W/2)/(base*k); cy=wy-(my-H/2)/(base*k); clamp(); }
+  function clamp(){ if(k===1){ cx=(x0+x1)/2; cy=(y0+y1)/2; } cx=Math.max(x0,Math.min(x1,cx)); cy=Math.max(y0,Math.min(y1,cy));
+    cv.style.touchAction=k>1?"none":"pan-y"; hover=null; hideTip(); draw(); }
+  const ptr=new Map(); let moved=false, pinch=0;
+  cv.addEventListener("pointerdown",e=>{ ptr.set(e.pointerId,[e.clientX,e.clientY]); moved=false; pinch=0; try{cv.setPointerCapture(e.pointerId)}catch(_){} });
+  cv.addEventListener("pointermove",e=>{ const p=ptr.get(e.pointerId);
+    if(!p){ if(e.pointerType==="mouse") point(e); return; }
+    const dx=e.clientX-p[0], dy=e.clientY-p[1]; ptr.set(e.pointerId,[e.clientX,e.clientY]);
+    if(ptr.size===2){ const [a,b]=[...ptr.values()], d=Math.hypot(a[0]-b[0],a[1]-b[1]), r=cv.getBoundingClientRect();
+      if(pinch) zoom(d/pinch,(a[0]+b[0])/2-r.left,(a[1]+b[1])/2-r.top); pinch=d; moved=true; return; }
+    if(!moved&&Math.hypot(dx,dy)<3) { ptr.set(e.pointerId,p); return; }
+    moved=true; if(k>1){ cv.classList.add("drag"); cx-=dx/(base*k); cy-=dy/(base*k); clamp(); } });
+  const up=e=>{ if(ptr.delete(e.pointerId)&&!moved) point(e); pinch=0; cv.classList.remove("drag"); };
+  cv.addEventListener("pointerup",up); cv.addEventListener("pointercancel",e=>{ptr.delete(e.pointerId);pinch=0});
+  cv.addEventListener("pointerleave",e=>{ if(e.pointerType==="mouse"&&!ptr.size){ hideTip(); if(hover){hover=null;draw();} } });
+  cv.addEventListener("wheel",e=>{ if(!e.ctrlKey&&!e.metaKey) return; e.preventDefault();
+    const r=cv.getBoundingClientRect(); zoom(Math.exp(-e.deltaY*.01),e.clientX-r.left,e.clientY-r.top); },{passive:false});
+  cv.addEventListener("dblclick",e=>{ const r=cv.getBoundingClientRect(); zoom(2,e.clientX-r.left,e.clientY-r.top); });
+  document.getElementById("z-in").onclick=()=>zoom(1.6);
+  document.getElementById("z-out").onclick=()=>zoom(1/1.6);
+  document.getElementById("z-reset").onclick=()=>{k=1;clamp()};
+  return {draw};
+})();
+function all(){drawArea();drawHeat();drawBars();drawDur();MAP&&MAP.draw();}
 all(); addEventListener("resize",()=>{clearTimeout(window._r);window._r=setTimeout(all,150)});
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change",all);
 new MutationObserver(all).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});

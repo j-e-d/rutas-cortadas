@@ -203,11 +203,20 @@ def main():
                     "days_bad": round(s["bad_h"] / 24, 1), "days_total": round(s["total_h"] / 24, 1),
                     "sev": "".join(sev), "frac": "".join(frac), "cause": "".join(cz), "conf": "".join(cf)})
 
+    # totals for every affected section, for the map: [region, ruta, tramo, days not open, days closed, cause]
+    totals = []
+    for s in sections:
+        cz = Counter()
+        for c in s["chrs"]:
+            cz.update(c)
+        totals.append([*s["key"], round(s["bad_h"] / 24, 1), round(s["total_h"] / 24, 1),
+                       NAMES.index(cz.most_common(1)[0][0])])
+
     out = {
         "start": day0.date().isoformat(), "end": end.isoformat(), "causes": NAMES,
         "daily": [[round(v, 2) for v in d] for d in daily],
         "monthly": {m: {c: round(v, 1) for c, v in cs.items()} for m, cs in sorted(monthly.items())},
-        "top": top, "permanent": permanent, "durations": durations, "passes": passes,
+        "top": top, "sections": totals, "permanent": permanent, "durations": durations, "passes": passes,
         "n_sections_affected": len(sections),
         "peak": {"n": peak, "at": peak_at.isoformat()},
         "total_closed_days": round(sum(d[2] for d in daily)),
