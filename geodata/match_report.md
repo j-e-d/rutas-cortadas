@@ -8,6 +8,7 @@ Red Vial Nacional 2025 (SIG Vial, DNV) buscando sus dos extremos.
 - Ubicados por aproximación (interpolados o medidos en km desde un extremo anclado): 192
 - Sin ubicar (no se dibujan): 47
 - Con diferencia grande entre el largo dibujado y los km de la tabla: 28
+- Ubicados con tránsito medio diario (TMDA 2024) asignado: 581
 
 ## Sin ubicar
 
@@ -95,6 +96,45 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 12 · Misiones · Acc. Aer. Posadas - Emp. RN 105 | 17.5 | 13.7 | interpolado / cruce de rutas |
 | RN 64 · Santiago del Estero · La Banda - Sgo. Del Estero | 12.0 | 8.7 | intersección DNV / localidad |
 | RN 36 · Córdoba · Emp. RN 8 - Int. RN A-005 | 5.0 | 8.2 | cruce de rutas / intersección DNV |
+
+## Historia de tramos dados de baja
+
+Vialidad volvió a cortar algunas rutas en tramos nuevos. El mapa no dibuja los tramos dados de baja: sus días
+pasan a los tramos actuales que cubren al menos la mitad del mismo recorrido, para las fechas anteriores a que existiera el tramo actual.
+
+| Tramo actual | Toma la historia de |
+|---|---|
+| RN 3 · Santa Cruz · Acc Reserva Laguna Azul-Paso Fronterizo Integracion Austral km2673 | Río Gallegos- Monte Aymond |
+| RN 3 · Santa Cruz · Acc. Estancia Moy Aike Chico km 2540 - Guer Aike | Puesto invernal Luis Trovato - Guer Aike; Pje. Lemarchand - Güer Aike |
+| RN 3 · Santa Cruz · Chimen Aike -Acc.Reserva Laguna Azul Km 2660 | Río Gallegos- Monte Aymond |
+| RN 3 · Santa Cruz · El Salado - Puerto San Julián | Tres Cerros - Puerto San Julian |
+| RN 3 · Santa Cruz · Empalme Aeropuerto-Chimen Aike | Río Gallegos- Monte Aymond |
+| RN 3 · Santa Cruz · Empalme RN N° 288 - Empalme RP 9 | Emp. RN 288 - Pje. Lemarchand; Emp. RN 288 - Estancia Ototel Aike |
+| RN 3 · Santa Cruz · Guer Aike-Empalme Aeropuerto | Guer Aike- Río Gallegos |
+| RN 3 · Santa Cruz · Tres Cerros - El Salado | Tres Cerros - Puerto San Julian |
+| RN 40 · Santa Cruz · 28 de Noviembre - Tapi Aike | El Turbio-La Esperanza |
+| RN 40 · Santa Cruz · Bajo Caracoles - Río Ecker | Bajo Caracoles - Perito Moreno |
+| RN 40 · Santa Cruz · Casa Riera - Emp. RPN°37 | Casa Riera - Las Horquetas; Gobernador Gregores - Tamel Aike |
+| RN 40 · Santa Cruz · El Turbio Viejo- 28 de Noviembre | El Turbio-La Esperanza |
+| RN 40 · Santa Cruz · Emp. RP29 - Gobernador Gregores | Tres Lagos- Gobernador Gregores; Tres Lagos -Gdor. Gregores |
+| RN 40 · Santa Cruz · Emp. RPN°37 - Río Olnie | Tamel Aike - Bajo Caracoles; Las Horquetas - Río Olnie |
+| RN 40 · Santa Cruz · Emp.RP73 -Emp. RP29 | Tres Lagos- Gobernador Gregores; Tres Lagos -Gdor. Gregores |
+| RN 40 · Santa Cruz · Gobernador Gregores - Casa Riera | Gobernador Gregores - Tamel Aike |
+| RN 40 · Santa Cruz · Perito Moreno- Límite con Chubut | Perito Moreno - Lte. Chubut; Empalme RP43- Limite con Chubut |
+| RN 40 · Santa Cruz · Puente Blanco- El Turbio Viejo | Puente Blanco- El Turbio |
+| RN 40 · Santa Cruz · Río Ecker - Perito Moreno | Bajo Caracoles - Perito Moreno |
+| RN 40 · Santa Cruz · Río Olnie - Bajo Caracoles | Tamel Aike - Bajo Caracoles |
+| RN 40 · Santa Cruz · Tapi Aike - La Esperanza | El Turbio-La Esperanza |
+
+Tramos dados de baja que se dibujan igual, solo donde ningún tramo actual quedó ubicado:
+
+| Tramo dado de baja | km dibujados |
+|---|---|
+| RN 3 · Santa Cruz · Emp. RN 288 - Estancia Ototel Aike *(dado de baja)* | 44.5 |
+| RN 3 · Santa Cruz · Emp. RN 288 - Pje. Lemarchand *(dado de baja)* | 19.5 |
+| RN 3 · Santa Cruz · Estancia Ototel Aike - Puesto Invernal Luis Trovato *(dado de baja)* | 40.1 |
+| RN 3 · Santa Cruz · Pje. Lemarchand - Güer Aike *(dado de baja)* | 15.9 |
+| RN 40 · Santa Cruz · Tres Lagos -Gdor. Gregores *(dado de baja)* | 77.8 |
 
 ## Ubicados por aproximación
 

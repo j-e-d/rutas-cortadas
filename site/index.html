@@ -46,7 +46,15 @@ svg text{fill:var(--muted);font:11px var(--mono)}
 .perm div{display:grid;gap:2px}
 .perm b{font-weight:600}
 .perm span{color:var(--fg2)}
+.cal{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.cal .panel{display:grid;gap:6px}
+.cal h3{margin:0;font:600 14px var(--display)}
+.cal h3 span{font-weight:400;color:var(--fg2)}
 .map{padding:0;overflow:hidden}
+.sd{display:grid;gap:6px}
+.sd h3{margin:0;font:600 15px var(--display)}
+.sd p{font-size:14px}
+#sd-strip{display:block;width:100%}
 #map{display:block;width:100%;cursor:grab;touch-action:pan-y}
 #map.drag{cursor:grabbing}
 .zoom{position:absolute;top:12px;right:12px;display:grid;gap:4px}
@@ -72,6 +80,15 @@ svg text{fill:var(--muted);font:11px var(--mono)}
   <div class="panel"><svg id="area" width="100%" role="img" aria-label="Tramos no habilitados por día, apilados por estado"></svg></div>
 </section>
 
+<section>
+  <h2>Kilómetros y tránsito afectados</h2>
+  <p>Los mismos cortes, pesados por el tamaño del tramo. Arriba, kilómetros de ruta no habilitados en promedio a lo largo de cada día. Abajo, cuántos vehículos pasan por día por esos tramos en un día normal, según el tránsito medio diario anual (TMDA 2024) de Vialidad: un tramo de 4 km con mucho tránsito pesa más que uno de 200 km casi vacío.</p>
+  <div class="legend" id="lg-state3"></div>
+  <div class="panel"><svg id="area-km" width="100%" role="img" aria-label="Kilómetros de ruta no habilitados por día, apilados por estado"></svg></div>
+  <div class="panel"><svg id="area-veh" width="100%" role="img" aria-label="Tránsito medio diario de los tramos no habilitados, por día, apilado por estado"></svg></div>
+  <p class="note" id="weight-note"></p>
+</section>
+
 <section id="map-section">
   <h2>Dónde se cortan las rutas</h2>
   <p>Cada tramo sigue la traza real de la ruta. El color indica cuántos días estuvo no habilitado en todo el período, sumando restricciones y cortes. En gris, los tramos sin ningún día afectado.</p>
@@ -79,6 +96,12 @@ svg text{fill:var(--muted);font:11px var(--mono)}
   <div class="panel map">
     <canvas id="map" role="img" aria-label="Mapa de las rutas nacionales, con cada tramo coloreado según los días que estuvo no habilitado"></canvas>
     <div class="zoom"><button type="button" id="z-in" aria-label="Acercar">+</button><button type="button" id="z-out" aria-label="Alejar">−</button><button type="button" id="z-reset" aria-label="Ver todo el país">⌂</button></div>
+  </div>
+  <div class="panel sd" id="sd">
+    <h3 id="sd-title"></h3>
+    <p id="sd-sub"></p>
+    <div class="legend" id="lg-state4"></div>
+    <canvas id="sd-strip" aria-label="Estado del tramo día por día"></canvas>
   </div>
   <p class="note" id="map-note"></p>
 </section>
@@ -98,6 +121,21 @@ svg text{fill:var(--muted);font:11px var(--mono)}
 </section>
 
 <section>
+  <h2>Cuándo se corta cada región</h2>
+  <p>Parte de los tramos de cada región que estuvo no habilitada en un día promedio de cada mes. Una fila por año; los meses fuera del período quedan en blanco.</p>
+  <div class="legend" id="lg-cal"></div>
+  <div class="cal" id="cal"></div>
+</section>
+
+<section>
+  <h2>Qué provincias tienen más cortes</h2>
+  <p>Cuántos días estuvo no habilitado, en promedio, cada kilómetro de ruta nacional de la provincia, por causa. Pesa cada tramo por su largo, así que una provincia con pocos tramos largos cortados puede superar a otra con muchos tramos cortos.</p>
+  <div class="legend" id="lg-cause2"></div>
+  <div class="panel"><svg id="prov" width="100%" role="img" aria-label="Días no habilitados por km de ruta nacional, por provincia y causa"></svg></div>
+  <p class="note">Un cero no quiere decir que no hubo cortes, sino que Vialidad nunca cargó un estado distinto de “habilitada” en esa provincia. En Formosa, Misiones y San Luis todos los tramos figuran habilitados y sin observaciones durante todo el período, lo que sugiere que esos distritos no actualizan la tabla. En Santa Fe y Entre Ríos algunos cortes aparecen solo en el texto de la observación (“corte total de tránsito”, “desvío total”, “intransitable días de lluvia”) con el estado en “habilitada”. En Tierra del Fuego y Córdoba las observaciones hablan de circular con precaución.</p>
+</section>
+
+<section>
   <h2>Cuánto dura un corte</h2>
   <p>Cada punto es un episodio: un tramo no habilitado desde que cambia de estado hasta que vuelve a estar habilitado. La raya vertical es la mediana. Escala logarítmica; se omiten episodios de menos de <span id="minh"></span> horas, que suelen ser correcciones de carga.</p>
   <div class="panel"><svg id="dur" width="100%" role="img" aria-label="Duración de episodios por causa y cortes totales en pasos a Chile"></svg></div>
@@ -109,7 +147,7 @@ svg text{fill:var(--muted);font:11px var(--mono)}
   <div class="panel perm" id="perm"></div>
 </section>
 
-<p class="note">El estado y la observación de Vialidad no siempre coinciden: restricciones por viento cargadas como “corte total”, o tramos restringidos cuya observación dice solo “Transitable”. Estos gráficos usan el estado tal como lo publica Vialidad; esos casos suman <span id="conf"></span> días-tramo y están marcados en la línea de tiempo. Cuando una observación no dice la causa, se toma la del resto del mismo episodio. Fuente: argentina.gob.ar/obras-publicas/vialidad-nacional/estado-de-las-rutas. Antes de dic 2024 la tabla no tenía columna de estado y no se incluye. Se omiten las capturas con errores de la API de Google Sheets. Trazas de las rutas: Dirección Nacional de Vialidad, SIG Vial (Red Vial Nacional 2025). Límites provinciales y localidades: Instituto Geográfico Nacional. <span id="gen"></span></p>
+<p class="note">El estado y la observación de Vialidad no siempre coinciden: restricciones por viento cargadas como “corte total”, o tramos restringidos cuya observación dice solo “Transitable”. Estos gráficos usan el estado tal como lo publica Vialidad; esos casos suman <span id="conf"></span> días-tramo y están marcados en la línea de tiempo. Cuando una observación no dice la causa, se toma la del resto del mismo episodio. Fuente: argentina.gob.ar/obras-publicas/vialidad-nacional/estado-de-las-rutas. Antes de dic 2024 la tabla no tenía columna de estado y no se incluye. Se omiten las capturas con errores de la API de Google Sheets. Trazas y tránsito de las rutas: Dirección Nacional de Vialidad, SIG Vial (Red Vial Nacional 2025, TMDA 2024). Límites provinciales y localidades: Instituto Geográfico Nacional. <span id="gen"></span></p>
 </main>
 <div class="tip" id="tip" hidden></div>
 <script>
@@ -132,7 +170,7 @@ document.getElementById("range").textContent = `Vialidad Nacional · ${my(new Da
 document.getElementById("conf").textContent = D.conflict_days;
 document.getElementById("minh").textContent = D.min_episode_h;
 document.getElementById("gen").textContent = `Actualizado el ${fmt(new Date(D.generated))}.`;
-legend("lg-state",STATES,SV); legend("lg-state2",STATES,SV); legend("lg-cause",D.causes,CV);
+legend("lg-cause2",D.causes,CV); legend("lg-state",STATES,SV); legend("lg-state2",STATES,SV); legend("lg-state3",STATES,SV); legend("lg-state4",STATES,SV); legend("lg-cause",D.causes,CV);
 const NS="http://www.w3.org/2000/svg";
 const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e};
 
@@ -146,29 +184,46 @@ document.getElementById("stats").innerHTML = [
 
 function months(){ const m=[]; for(let i=0;i<N;i++){const d=day(i); if(d.getUTCDate()===1) m.push([i,d]);} return m; }
 
-// area chart
-function drawArea(){
-  const svg=document.getElementById("area"); svg.innerHTML="";
-  const W=svg.clientWidth, H=240, m={l:36,r:8,t:8,b:24}; svg.setAttribute("height",H);
+// area charts: one stacked area per estado, total at the bottom
+const nice = v => { const p=10**Math.floor(Math.log10(v)), f=v/p; return [1,2,3,4,5,6,8,10].find(c=>c>=f)*p; };
+const kfmt = v => v>=1e3?`${(v/1e3).toLocaleString("es-AR",{maximumFractionDigits:1})} mil`:`${v}`;
+function drawArea(){ stackArea("area", D.daily, {top:max=>Math.ceil(max/10)*10, label:v=>v,
+  tip:(i,d)=>`${fmt(day(i))} (promedio del día)\nCorte total   ${d[2].toFixed(1)}\nCorte parcial ${d[1].toFixed(1)}\nRestringida   ${d[0].toFixed(1)}`}); }
+function drawWeighted(){
+  const n=v=>Math.round(v).toLocaleString("es-AR");
+  stackArea("area-km", D.daily_km, {H:200, top:max=>nice(max), label:v=>kfmt(v), unit:"km",
+    tip:(i,d)=>`${fmt(day(i))} (promedio del día)\nkm no habilitados: ${n(d[0]+d[1]+d[2])}\nCorte total   ${n(d[2])} km\nCorte parcial ${n(d[1])} km\nRestringida   ${n(d[0])} km`});
+  stackArea("area-veh", D.daily_veh, {H:200, top:max=>nice(max), label:v=>kfmt(v), unit:"vehículos por día",
+    tip:(i,d)=>`${fmt(day(i))} (promedio del día)\nTránsito de los tramos afectados: ${n(d[0]+d[1]+d[2])} vehículos/día\nCorte total   ${n(d[2])}\nCorte parcial ${n(d[1])}\nRestringida   ${n(d[0])}`});
+  document.getElementById("weight-note").textContent =
+    `El TMDA es un promedio anual: en un corte por nieve el tránsito real suele ser menor, y el gráfico muestra el tránsito que esos tramos tienen en un día típico, no vehículos varados. `+
+    `Hay km para el ${Math.round(D.weight_cover.km*100)}% de los días-tramo afectados y TMDA para el ${Math.round(D.weight_cover.tmda*100)}%; el resto no suma. `+
+    `El TMDA de cada tramo es el promedio, por kilómetro, de los tramos de conteo de Vialidad que lo cubren.`;
+}
+function stackArea(id, series, o){
+  const svg=document.getElementById(id); svg.innerHTML="";
+  const W=svg.clientWidth, H=o.H||240, m={l:o.unit?52:36,r:8,t:o.unit?20:8,b:24}; svg.setAttribute("height",H);
   const x=i=>m.l+i*(W-m.l-m.r)/(N-1);
-  const max=Math.max(...D.daily.map(d=>d[0]+d[1]+d[2]));
-  const top=Math.ceil(max/10)*10, y=v=>H-m.b-v*(H-m.t-m.b)/top;
-  for(let v=0;v<=top;v+=top/4){ el("line",{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:css("--grid")},svg);
-    el("text",{x:m.l-6,y:y(v)+4,"text-anchor":"end"},svg).textContent=v; }
-  months().forEach(([i,d])=>{ if(d.getUTCMonth()%3) return;
+  const max=Math.max(...series.map(d=>d[0]+d[1]+d[2]));
+  const top=o.top(max), y=v=>H-m.b-v*(H-m.t-m.b)/top;
+  if(o.unit) el("text",{x:0,y:10},svg).textContent=o.unit;
+  const nt=o.unit&&/^[36]/.test(String(top))?3:4;  // 3 000 splits into thirds, not 2 250 steps
+  for(let v=0;v<=top;v+=top/nt){ el("line",{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:css("--grid")},svg);
+    el("text",{x:m.l-6,y:y(v)+4,"text-anchor":"end"},svg).textContent=o.label(v); }
+  months().forEach(([i,d])=>{ if(d.getUTCMonth()%(W<600?6:3)) return;  // fewer labels on phones
     el("text",{x:x(i),y:H-6,"text-anchor":"middle"},svg).textContent=d.toLocaleDateString("es-AR",{month:"short",year:"2-digit",timeZone:"UTC"}); });
   // stack: total at bottom (most severe), then parcial, then restringida
   const order=[2,1,0]; let base=new Array(N).fill(0);
-  order.forEach(k=>{ const upper=D.daily.map((d,i)=>base[i]+d[k]);
+  order.forEach(k=>{ const upper=series.map((d,i)=>base[i]+d[k]);
     let p=`M${x(0)},${y(upper[0])}`; for(let i=1;i<N;i++) p+=`L${x(i)},${y(upper[i])}`;
     for(let i=N-1;i>=0;i--) p+=`L${x(i)},${y(base[i])}`;
     el("path",{d:p+"Z",fill:css(SV[k]),"fill-opacity":.9,stroke:css("--surface"),"stroke-width":1},svg); base=upper; });
   const cross=el("line",{y1:m.t,y2:H-m.b,stroke:css("--fg2"),"stroke-width":1,visibility:"hidden"},svg);
   const hit=el("rect",{x:m.l,y:m.t,width:W-m.l-m.r,height:H-m.t-m.b,fill:"transparent"},svg);
   hit.addEventListener("mousemove",e=>{ const r=svg.getBoundingClientRect();
-    const i=Math.max(0,Math.min(N-1,Math.round((e.clientX-r.left-m.l)/(W-m.l-m.r)*(N-1)))), d=D.daily[i];
+    const i=Math.max(0,Math.min(N-1,Math.round((e.clientX-r.left-m.l)/(W-m.l-m.r)*(N-1)))), d=series[i];
     cross.setAttribute("x1",x(i)); cross.setAttribute("x2",x(i)); cross.setAttribute("visibility","visible");
-    showTip(e,`${fmt(day(i))} (promedio del día)\nCorte total   ${d[2].toFixed(1)}\nCorte parcial ${d[1].toFixed(1)}\nRestringida   ${d[0].toFixed(1)}`); });
+    showTip(e,o.tip(i,d)); });
   hit.addEventListener("mouseleave",()=>{hideTip();cross.setAttribute("visibility","hidden")});
 }
 
@@ -261,19 +316,19 @@ const MAP = (()=>{
   const secs=GEO.sections.map(s=>{ const key=s.k.join("|"), t=tot.get(key), parts=s.l.map(dec);
     let bx0=1e9,by0=1e9,bx1=-1e9,by1=-1e9;
     parts.forEach(r=>{ for(let i=0;i<r.length;i+=2){ bx0=Math.min(bx0,r[i]); bx1=Math.max(bx1,r[i]); by0=Math.min(by0,r[i+1]); by1=Math.max(by1,r[i+1]); } });
-    return {k:s.k, parts, old:!!s.old, days:t?t[3]:0, closed:t?t[4]:0, cause:t?t[5]:-1, perm:perm.get(key), box:[bx0,by0,bx1,by1]}; })
-    .filter(s=>!s.old||s.days>0||s.perm);
+    return {k:s.k, parts, days:t?t[3]:0, closed:t?t[4]:0, cause:t?t[5]:-1, runs:t?t[6]:null, prev:!!s.p, perm:perm.get(key), box:[bx0,by0,bx1,by1]}; });
   // draw order: open sections first, then by days so the worst end up on top
   secs.sort((a,b)=>(a.perm?-1:a.days)-(b.perm?-1:b.days));
   const missing=D.sections.filter(t=>!GEO.sections.some(s=>s.k.join("|")===t.slice(0,3).join("|"))).length;
   document.getElementById("map-note").textContent =
-    `Pasá el cursor o tocá un tramo para ver el detalle. Para acercar usá los botones, pellizcá o girá la rueda con Ctrl; arrastrá para mover. `+
+    `Pasá el cursor por un tramo para ver el detalle, o tocalo para ver abajo su estado día por día. Para acercar usá los botones, pellizcá o girá la rueda con Ctrl; arrastrá para mover. `+
     `Los tramos de trazo punteado son las restricciones permanentes, que no entran en la escala. `+
     `La tabla de Vialidad no trae coordenadas: cada tramo se ubicó sobre la traza buscando sus extremos, y ${missing} tramos con días afectados no se pudieron ubicar y no aparecen.`;
   document.getElementById("lg-map").innerHTML =
     ["menos de 1 día","1 a 5","5 a 20","20 a 80","más de 80 días"].map((n,i)=>`<span><i class="line" style="background:var(--m${i+1})"></i>${n}</span>`).join("")+
     `<span><i class="line" style="background:var(--m0)"></i>Sin días afectados</span><span><i class="dash"></i>Restricción permanente</span>`;
   let W=0,H=0,base=1,k=1,cx=(x0+x1)/2,cy=(y0+y1)/2,hover=null;
+  let sel=null;
   const sx=x=>W/2+(x-cx)*base*k, sy=y=>H/2+(y-cy)*base*k;
   function path(g,r){ g.moveTo(sx(r[0]),sy(r[1])); for(let i=2;i<r.length;i+=2) g.lineTo(sx(r[i]),sy(r[i+1])); }
   function draw(){
@@ -290,8 +345,31 @@ const MAP = (()=>{
       else if(s.days>0){ g.strokeStyle=cols[bin(s.days)]; g.lineWidth=2.5*wz; }
       else { g.strokeStyle=cols[0]; g.lineWidth=1*wz; }
       g.stroke(); g.setLineDash([]); });
-    if(hover){ g.beginPath(); hover.parts.forEach(r=>path(g,r)); g.strokeStyle=css("--fg"); g.lineWidth=2.5*wz+3; g.stroke();
-      g.strokeStyle=hover.perm?css("--surface"):cols[hover.days>0?bin(hover.days):0]; g.lineWidth=2.5*wz; g.stroke(); }
+    [sel,hover].forEach(h=>{ if(!h) return; g.beginPath(); h.parts.forEach(r=>path(g,r)); g.strokeStyle=css("--fg"); g.lineWidth=2.5*wz+3; g.stroke();
+      g.strokeStyle=h.perm?css("--surface"):cols[h.days>0?bin(h.days):0]; g.lineWidth=2.5*wz; g.stroke(); });
+    detail();
+  }
+  // the selected section's history: one column per day, coloured like the top-40 heatmap
+  function detail(){
+    const s=sel, cvs=document.getElementById("sd-strip");
+    const ti=document.getElementById("sd-title"); ti.textContent=s?`RN ${s.k[1]} · ${s.k[0]} · ${s.k[2]}`:""; ti.style.display=s?"":"none";
+    document.getElementById("sd-sub").textContent=!s?"Hacé clic o tocá un tramo en el mapa de arriba para ver su estado día por día.":s.perm?`Restricción permanente, no habilitada el ${Math.round(s.perm.share*100)}% del período.`:
+      s.days>0?`${days(s.days)} días no habilitado, ${days(s.closed)} con corte total. Causa principal: ${D.causes[s.cause]}.${s.prev?" Incluye los días de los tramos que Vialidad reemplazó por este.":""}`:"Sin días afectados en el período.";
+    const show=!!(s&&s.runs);  // (the hidden attribute loses to #sd-strip's display:block)
+    cvs.style.display=document.getElementById("lg-state4").style.display=show?"":"none"; if(!show) return;
+    const dpr=devicePixelRatio||1, SW=cvs.parentElement.clientWidth-34, SH=40;
+    cvs.width=SW*dpr; cvs.height=SH*dpr; cvs.style.height=SH+"px";
+    const g=cvs.getContext("2d"); g.scale(dpr,dpr);
+    const codes=[]; for(let i=0;i<s.runs.length;i+=2) for(let n=0;n<s.runs[i+1];n++) codes.push(s.runs[i]);
+    const cw=SW/N, sc=[null,css("--s1"),css("--s2"),css("--s3")];
+    g.fillStyle=css("--grid"); g.fillRect(0,2,SW,20);
+    codes.forEach((c,i)=>{ if(!c) return; g.globalAlpha=.25+.75*(Math.floor(c/10)%10)/9; g.fillStyle=sc[Math.floor(c/100)]; const a=Math.floor(i*cw); g.fillRect(a,2,Math.max(1,Math.floor((i+1)*cw)-a),20); });
+    g.globalAlpha=1; g.fillStyle=css("--muted"); g.font="11px 'IBM Plex Mono', monospace"; g.textAlign="center";
+    months().forEach(([i,d])=>{ if(d.getUTCMonth()%(SW<600?6:3)) return; g.fillRect(i*cw,22,1,4);
+      g.fillText(d.toLocaleDateString("es-AR",{month:"short",year:"2-digit",timeZone:"UTC"}),Math.min(SW-20,Math.max(20,i*cw)),37); });
+    cvs.onmousemove=e=>{ const r=cvs.getBoundingClientRect(), i=Math.floor((e.clientX-r.left)/cw); if(i<0||i>=N) return hideTip();
+      const c=codes[i]; showTip(e,`${fmt(day(i))}: ${c?`${STATES[Math.floor(c/100)-1]}, ~${Math.round((Math.floor(c/10)%10)/9*24)} h\nCausa: ${D.causes[c%10]}`:"Habilitada"}`); };
+    cvs.onmouseleave=hideTip;
   }
   function pick(mx,my){ let best=null,bd=10;
     for(const s of secs){ if(sx(s.box[2])<mx-10||sx(s.box[0])>mx+10||sy(s.box[3])<my-10||sy(s.box[1])>my+10) continue;
@@ -306,9 +384,9 @@ const MAP = (()=>{
     if(s.perm) t+=`\nRestricción permanente (${Math.round(s.perm.share*100)}% del período)${s.perm.obs?`\n“${s.perm.obs}”`:""}`;
     else if(s.days>0) t+=`\n${days(s.days)} días no habilitado\n${days(s.closed)} con corte total\nCausa principal: ${D.causes[s.cause]}`;
     else t+=`\nSin días afectados en el período`;
-    if(s.old) t+=`\nTramo que ya no figura en la tabla`;
     return t; }
-  function point(e){ const r=cv.getBoundingClientRect(), s=pick(e.clientX-r.left,e.clientY-r.top);
+  function point(e,select){ const r=cv.getBoundingClientRect(), s=pick(e.clientX-r.left,e.clientY-r.top);
+    if(select&&s&&s!==sel){ sel=s; draw(); }
     if(s!==hover){ hover=s; draw(); } s?showTip(e,text(s)):hideTip(); }
   function zoom(f,mx=W/2,my=H/2){ const nk=Math.max(1,Math.min(60,k*f));
     const wx=cx+(mx-W/2)/(base*k), wy=cy+(my-H/2)/(base*k);
@@ -324,7 +402,7 @@ const MAP = (()=>{
       if(pinch) zoom(d/pinch,(a[0]+b[0])/2-r.left,(a[1]+b[1])/2-r.top); pinch=d; moved=true; return; }
     if(!moved&&Math.hypot(dx,dy)<3) { ptr.set(e.pointerId,p); return; }
     moved=true; if(k>1){ cv.classList.add("drag"); cx-=dx/(base*k); cy-=dy/(base*k); clamp(); } });
-  const up=e=>{ if(ptr.delete(e.pointerId)&&!moved) point(e); pinch=0; cv.classList.remove("drag"); };
+  const up=e=>{ if(ptr.delete(e.pointerId)&&!moved) point(e,true); pinch=0; cv.classList.remove("drag"); };
   cv.addEventListener("pointerup",up); cv.addEventListener("pointercancel",e=>{ptr.delete(e.pointerId);pinch=0});
   cv.addEventListener("pointerleave",e=>{ if(e.pointerType==="mouse"&&!ptr.size){ hideTip(); if(hover){hover=null;draw();} } });
   cv.addEventListener("wheel",e=>{ if(!e.ctrlKey&&!e.metaKey) return; e.preventDefault();
@@ -335,7 +413,47 @@ const MAP = (()=>{
   document.getElementById("z-reset").onclick=()=>{k=1;clamp()};
   return {draw};
 })();
-function all(){drawArea();drawHeat();drawBars();drawDur();MAP&&MAP.draw();}
+// seasonal calendar: region × month, share of the region's sections not open on an average day
+const CAL_BINS=[0.5,1,2,5], calBin=v=>1+CAL_BINS.filter(b=>v>=b).length;
+document.getElementById("lg-cal").innerHTML=["menos de 0,5%","0,5 a 1%","1 a 2%","2 a 5%","5% o más"].map((n,i)=>`<span><i style="background:var(--m${i+1})"></i>${n}</span>`).join("")+
+  `<span><i style="background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)"></i>Ninguno</span>`;
+document.getElementById("cal").innerHTML=D.regions.map((r,i)=>`<div class="panel"><h3>${r.name} <span>· ${r.n} tramos</span></h3><svg id="cal${i}" width="100%" role="img" aria-label="Calendario de ${r.name}"></svg></div>`).join("");
+function drawCal(){
+  const MS=["E","F","M","A","M","J","J","A","S","O","N","D"], ms=Object.keys(D.regions[0].months);
+  const years=[...new Set(ms.map(m=>+m.slice(0,4)))];
+  D.regions.forEach((r,ri)=>{ const svg=document.getElementById("cal"+ri); svg.innerHTML="";
+    const W=svg.clientWidth, LW=36, cw=(W-LW)/12, ch=22, H=16+years.length*(ch+2); svg.setAttribute("height",H);
+    MS.forEach((n,j)=>el("text",{x:LW+j*cw+cw/2,y:11,"text-anchor":"middle"},svg).textContent=n);
+    years.forEach((yv,yi)=>{ const y0=16+yi*(ch+2);
+      el("text",{x:0,y:y0+ch/2+4},svg).textContent=yv;
+      for(let j=0;j<12;j++){ const key=`${yv}-${String(j+1).padStart(2,"0")}`, v=r.months[key];
+        const c=el("rect",{x:LW+j*cw+1,y:y0,width:cw-2,height:ch,rx:2},svg);
+        if(!v){ c.setAttribute("fill","none"); continue; }
+        c.setAttribute("fill", v[1]>0?css("--m"+calBin(v[1])):css("--surface"));
+        if(!(v[1]>0)){ c.setAttribute("stroke",css("--line")); }
+        const mn=new Date(Date.UTC(yv,j,1)).toLocaleDateString("es-AR",{month:"long",year:"numeric",timeZone:"UTC"});
+        c.addEventListener("mousemove",e=>showTip(e,`${r.name} · ${mn}\n${v[1].toLocaleString("es-AR",{maximumFractionDigits:1})}% de los tramos no habilitados (${v[0].toLocaleString("es-AR",{maximumFractionDigits:1})} de ${r.n} en un día promedio)${v[2]>=0?`\nCausa principal: ${D.causes[v[2]]}`:""}`));
+        c.addEventListener("mouseleave",hideTip); } }); });
+}
+// province ranking: horizontal bars stacked by cause
+function drawProv(){
+  const svg=document.getElementById("prov"); svg.innerHTML="";
+  const P=D.provinces, W=svg.clientWidth, narrow=W<560, LW=narrow?120:170, rowH=22, m={t:4,r:44,b:22};
+  const H=m.t+P.length*rowH+m.b; svg.setAttribute("height",H);
+  const tots=P.map(p=>p.days.reduce((a,b)=>a+b,0)), top=Math.ceil(Math.max(...tots)/5)*5;
+  const x=v=>LW+v*(W-LW-m.r)/top;
+  for(let v=0;v<=top;v+=5){ el("line",{x1:x(v),x2:x(v),y1:m.t,y2:H-m.b,stroke:css("--grid")},svg);
+    el("text",{x:x(v),y:H-6,"text-anchor":"middle"},svg).textContent=v; }
+  const short=n=>n.startsWith("Tierra del Fuego")?"Tierra del Fuego":narrow?n.replace("Santiago del Estero","Sgo. del Estero"):n;
+  P.forEach((p,i)=>{ const y0=m.t+i*rowH;
+    el("text",{x:0,y:y0+rowH/2+4,style:"fill:var(--fg2)"},svg).textContent=short(p.name);
+    let acc=0; p.days.forEach((v,ci)=>{ if(v<=0) return;
+      const r=el("rect",{x:x(acc),y:y0+4,width:Math.max(1,x(acc+v)-x(acc)-(v>0.3?1:0)),height:rowH-8,fill:css(CV[ci])},svg); acc+=v;
+      r.addEventListener("mousemove",e=>showTip(e,`${p.name}\n${D.causes[ci]}: ${v.toLocaleString("es-AR",{maximumFractionDigits:1})} días por km\nTotal: ${tots[i].toLocaleString("es-AR",{maximumFractionDigits:1})} días por km, sobre ${p.km.toLocaleString("es-AR")} km de ruta nacional`));
+      r.addEventListener("mouseleave",hideTip); });
+    el("text",{x:x(tots[i])+5,y:y0+rowH/2+4,style:"fill:var(--fg)"},svg).textContent=tots[i]<0.05?"0":tots[i].toLocaleString("es-AR",{maximumFractionDigits:1}); });
+}
+function all(){drawArea();drawWeighted();drawHeat();drawBars();drawCal();drawProv();drawDur();MAP&&MAP.draw();}
 all(); addEventListener("resize",()=>{clearTimeout(window._r);window._r=setTimeout(all,150)});
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change",all);
 new MutationObserver(all).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});

@@ -9,7 +9,9 @@ python3 -m http.server -d site             # ver en http://localhost:8000
 ```
 
 - `scripts/history.py`: recorre el historial de git y escribe `build/rutas_changes.csv` y `build/rutas_snapshots.csv`.
-- `scripts/viz_data.py`: convierte los cambios en `site/data.json` (horas por estado, causas, episodios).
+- `scripts/viz_data.py`: convierte los cambios en `site/data.json` (horas por estado, causas, episodios, km y
+  tránsito afectados, calendario por región, ranking por provincia, historia de cada tramo para el mapa).
+  Lee el TMDA y los reemplazos de tramos desde `site/geo.json`.
 - `site/index.html`: la página; carga `data.json` y `geo.json`.
 - `site/geo.json`: la traza de cada tramo para el mapa. Está versionado: no se regenera en cada build.
 - `scripts/geometry.py`: genera `site/geo.json` y `geodata/match_report.md`. Se corre a mano cuando cambia la
@@ -29,8 +31,9 @@ python3 -m http.server -d site             # ver en http://localhost:8000
 
 - Estado de las rutas: Vialidad Nacional, argentina.gob.ar/obras-publicas/vialidad-nacional/estado-de-las-rutas,
   vía [j-e-d/estadorutas](https://github.com/j-e-d/estadorutas).
-- Trazas, postes kilométricos e intersecciones: Dirección Nacional de Vialidad, SIG Vial
-  (sigvial.vialidad.gob.ar), capas Red Vial Nacional 2025, Postes Kilométricos 2025 e Intersecciones 2025.
+- Trazas, postes kilométricos, intersecciones y tránsito: Dirección Nacional de Vialidad, SIG Vial
+  (sigvial.vialidad.gob.ar), capas Red Vial Nacional 2025, Postes Kilométricos 2025, Intersecciones 2025 y
+  TMDA 2024 (tránsito medio diario anual; `geometry.py` guarda el TMDA de cada tramo en `site/geo.json`).
   Datos públicos del Estado nacional; la capa no declara una licencia.
 - Límites provinciales y localidades (BAHRA): Instituto Geográfico Nacional de la República Argentina
   (wms.ign.gob.ar). Las localidades solo se usan para ubicar tramos; no se publican.

@@ -2,6 +2,8 @@
 
 Usage: viz_data.py <rutas_changes.csv> <data.json>
 
+Reads geo.json next to data.json, if present, for each section's traffic (TMDA 2024).
+
 A section's state holds from one change to the next, so everything is measured in time:
 hours per day in each estado, and the peak number of sections affected at the same moment.
 
@@ -40,6 +42,14 @@ NAMES = [c for c, _ in CAUSES] + [UNKNOWN]
 RESTRICT = re.compile(r"restring", re.I)
 CLOSED = re.compile(r"corte|cortad|cerrad|intransit|no transit|interrump|sin paso", re.I)
 PASSABLE = re.compile(r"^\W*(transitable|tr[aá]nsito (normal|con precauc)|habilitad)", re.I)
+REGIONS = [  # for the seasonal calendar
+    ("NOA", {"Jujuy", "Salta", "Tucumán", "Catamarca", "La Rioja", "Santiago del Estero"}),
+    ("NEA", {"Misiones", "Corrientes", "Chaco", "Formosa"}),
+    ("Cuyo", {"Mendoza", "San Juan", "San Luis"}),
+    ("Centro", {"Córdoba", "Santa Fe", "Entre Ríos", "Buenos Aires", "La Pampa"}),
+    ("Patagonia", {"Neuquén", "Río Negro", "Chubut", "Santa Cruz", "Tierra del Fuego, Antártida e Islas del Atlántico Sur"}),
+]
+REGION_OF = {p: name for name, provs in REGIONS for p in provs}
 PASSES = [  # full-closure durations for the border passes
     ("Mendoza", "7", "Tunel Internacional", "RN 7 · Cristo Redentor"),
     ("Neuquén", "242", "Aduana - Lte. con Chile", "RN 242 · Pino Hachado"),
@@ -65,6 +75,7 @@ def conflict(estado, text):
 
 def main():
     events = defaultdict(list)
+    km = {}  # latest length published for each section
     end = None
     for r in csv.DictReader(open(CHANGES)):
         if r["schema"] != "new":
@@ -73,6 +84,10 @@ def main():
         end = max(end or ts, ts)
         est = None if r["event"] == "removed" else r["estado"]
         events[(r["region"], r["ruta"], r["tramo"])].append((ts, est, r["observaciones"]))
+        try:
+            km[(r["region"], r["ruta"], r["tramo"])] = float(r["km"].replace(",", "."))
+        except ValueError:
+            pass
 
     day0 = min(e[0][0] for e in events.values()).replace(hour=0, minute=0, second=0, microsecond=0)
     ndays = (end - day0).days + 1
@@ -118,7 +133,17 @@ def main():
             del segs[key]
             episodes.pop(key)
 
+    geo = OUT.parent / "geo.json"
+    geo_secs = json.loads(geo.read_text())["sections"] if geo.exists() else []
+    tmda = {tuple(s["k"]): s["t"] for s in geo_secs if "t" in s}
+    if geo.exists():
+        tmda.update({tuple(t[:3]): t[3] for t in json.loads(geo.read_text()).get("tmda_retired", [])})
+    prev = {tuple(s["k"]): [tuple(k) for k in s["p"]] for s in geo_secs if "p" in s}
     daily = [[0.0, 0.0, 0.0] for _ in range(ndays)]
+    daily_km = [[0.0, 0.0, 0.0] for _ in range(ndays)]  # km of route not open, averaged over the day
+    daily_veh = [[0.0, 0.0, 0.0] for _ in range(ndays)]  # TMDA of those sections, same weighting
+    cover = Counter()  # section-days not open: all, with km, with traffic
+    reg_month = defaultdict(Counter)  # (region, month) -> cause -> section-days not open
     monthly = defaultdict(Counter)
     conflict_h = 0.0
     sections = []
@@ -138,9 +163,19 @@ def main():
                     conf[d] += h
                 t = nxt
         for d in range(ndays):
+            month = (day0 + timedelta(days=d)).strftime("%Y-%m")
             for k in range(3):
                 daily[d][k] += hrs[d][k] / 24
-            month = (day0 + timedelta(days=d)).strftime("%Y-%m")
+                daily_km[d][k] += hrs[d][k] / 24 * km.get(key, 0)
+                daily_veh[d][k] += hrs[d][k] / 24 * tmda.get(key, 0)
+            reg = REGION_OF.get(key[0])
+            if reg:
+                for c, h in chrs[d].items():
+                    reg_month[(reg, month)][c] += h / 24
+            bad_d = sum(hrs[d]) / 24
+            cover["all"] += bad_d
+            cover["km"] += bad_d if key in km else 0
+            cover["tmda"] += bad_d if key in tmda else 0
             for c, h in chrs[d].items():
                 monthly[month][c] += h / 24
         conflict_h += sum(conf)
@@ -203,20 +238,87 @@ def main():
                     "days_bad": round(s["bad_h"] / 24, 1), "days_total": round(s["total_h"] / 24, 1),
                     "sev": "".join(sev), "frac": "".join(frac), "cause": "".join(cz), "conf": "".join(cf)})
 
-    # totals for every affected section, for the map: [region, ruta, tramo, days not open, days closed, cause]
+    # totals for every affected section, for the map: [region, ruta, tramo, days not open, days closed, cause, days]
+    # days is run-length encoded [code, run length, ...]; code = estado*100 + share of the day (0-9)*10 + cause,
+    # 0 when open all day. Same per-day rules as the top-40 heatmap.
+    # A current section that replaced retired ones (see geometry.py) takes their days from before it existed,
+    # so the map shows the stretch's whole history; the retired sections themselves are then left out.
+    # This only affects the map; the other charts count every section as published.
+    by_key = {s["key"]: s for s in sections}
+    alive = {}  # key -> (first day, last day) the section was in the table
+    for key, evs in events.items():
+        last = (evs[-1][0] - day0).days if evs[-1][1] is None else ndays - 1
+        alive[key] = ((evs[0][0] - day0).days, last)
+    drawn_old = {tuple(s["k"]) for s in geo_secs if s.get("old")}  # retired, drawn where nothing current is
+    merged_away = {k for ks in prev.values() for k in ks} - drawn_old
+    perm_keys = {(p["region"], p["ruta"], p["tramo"]) for p in permanent}
+    keys = [k for k in by_key if k not in merged_away] + [k for k in prev if k not in by_key and k not in perm_keys]
     totals = []
-    for s in sections:
+    for key in keys:
+        own = by_key.get(key)
+        hrs = [list(h) for h in own["hrs"]] if own else [[0.0, 0.0, 0.0] for _ in range(ndays)]
+        chrs = [Counter(c) for c in own["chrs"]] if own else [Counter() for _ in range(ndays)]
+        first = alive.get(key, (0, 0))[0]
+        for d in range(first):
+            for pk in prev.get(key, []):
+                if pk in by_key and alive[pk][0] <= d <= alive[pk][1]:
+                    hrs[d], chrs[d] = list(by_key[pk]["hrs"][d]), Counter(by_key[pk]["chrs"][d])
+                    break
+        bad_h, total_h = sum(map(sum, hrs)), sum(h[2] for h in hrs)
+        if bad_h == 0:
+            continue
         cz = Counter()
-        for c in s["chrs"]:
+        for c in chrs:
             cz.update(c)
-        totals.append([*s["key"], round(s["bad_h"] / 24, 1), round(s["total_h"] / 24, 1),
-                       NAMES.index(cz.most_common(1)[0][0])])
+        runs = []
+        for d in range(ndays):
+            h = hrs[d]
+            tot = sum(h)
+            code = 0 if tot == 0 else ((max(range(3), key=lambda k: h[k]) + 1) * 100 + min(9, round(tot / 24 * 9)) * 10
+                                       + NAMES.index(chrs[d].most_common(1)[0][0]))
+            if runs and runs[-2] == code:
+                runs[-1] += 1
+            else:
+                runs += [code, 1]
+        totals.append([*key, round(bad_h / 24, 1), round(total_h / 24, 1), NAMES.index(cz.most_common(1)[0][0]), runs])
+
+    # seasonal calendar: per region and month, the share of the region's sections not open on an average day
+    month_days = Counter((day0 + timedelta(days=d)).strftime("%Y-%m") for d in range(ndays))
+    current = [k for k, evs in events.items() if evs[-1][1] is not None and k not in perm_keys]
+    n_reg = Counter(REGION_OF.get(k[0]) for k in current)
+    regions = []
+    for name, _ in REGIONS:
+        months = {}
+        for m, nd in sorted(month_days.items()):
+            cz = reg_month.get((name, m), Counter())
+            avg = sum(cz.values()) / nd
+            months[m] = [round(avg, 2), round(100 * avg / n_reg[name], 2) if n_reg[name] else 0, NAMES.index(cz.most_common(1)[0][0]) if cz else -1]
+        regions.append({"name": name, "n": n_reg[name], "months": months})
+
+    # province ranking: days a km of the province's national network was not open, on average, by cause
+    # (sum of days not open × km over sections / km of the province's current sections; permanent listings out)
+    prov_km = Counter()
+    for k in current:
+        prov_km[k[0]] += km.get(k, 0)
+    prov_days = defaultdict(Counter)
+    for s in sections:
+        if s["key"] not in km:
+            continue
+        for c in s["chrs"]:
+            for cz, h in c.items():
+                prov_days[s["key"][0]][cz] += h / 24 * km[s["key"]]
+    provinces = sorted(({"name": p, "km": round(prov_km[p]),
+                         "days": [round(prov_days[p][c] / prov_km[p], 2) for c in NAMES]} for p in prov_km if prov_km[p]),
+                       key=lambda p: -sum(p["days"]))
 
     out = {
         "start": day0.date().isoformat(), "end": end.isoformat(), "causes": NAMES,
         "daily": [[round(v, 2) for v in d] for d in daily],
+        "daily_km": [[round(v) for v in d] for d in daily_km],
+        "daily_veh": [[round(v) for v in d] for d in daily_veh],
+        "weight_cover": {"km": round(cover["km"] / cover["all"], 3), "tmda": round(cover["tmda"] / cover["all"], 3)},
         "monthly": {m: {c: round(v, 1) for c, v in cs.items()} for m, cs in sorted(monthly.items())},
-        "top": top, "sections": totals, "permanent": permanent, "durations": durations, "passes": passes,
+        "top": top, "sections": totals, "regions": regions, "provinces": provinces, "permanent": permanent, "durations": durations, "passes": passes,
         "n_sections_affected": len(sections),
         "peak": {"n": peak, "at": peak_at.isoformat()},
         "total_closed_days": round(sum(d[2] for d in daily)),
@@ -233,6 +335,8 @@ def main():
     print(f"days={ndays} sections={len(sections)} permanent={[(p['ruta'], p['region']) for p in permanent]}")
     print(f"peak={peak} at {peak_at}; closed section-days={out['total_closed_days']}; conflict section-days={out['conflict_days']}")
     print("causes:", [(c, round(v), f"{v / all_h:.0%}") for c, v in tot.most_common()])
+    print(f"weights: km cover {out['weight_cover']['km']:.0%}, tmda cover {out['weight_cover']['tmda']:.0%}; "
+          f"mean km/day {sum(map(sum, daily_km)) / ndays:.0f}, mean veh/day {sum(map(sum, daily_veh)) / ndays:.0f}")
     print(f"episodes kept={len(durations)}; passes:", [(p["label"], len(p["closures"])) for p in passes])
 
 

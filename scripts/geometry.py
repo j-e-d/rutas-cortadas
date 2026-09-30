@@ -8,7 +8,8 @@ Runs locally, not in CI; site/geo.json is committed. Standard library only.
 
 Sources (all public government layers):
   SIG Vial, Dirección Nacional de Vialidad (sigvial.vialidad.gob.ar): Red Vial Nacional 2025,
-    Postes Kilométricos 2025, Intersecciones 2025.
+    Postes Kilométricos 2025, Intersecciones 2025, TMDA 2024 (tránsito medio diario anual; the layer is
+    named after heavy vehicles but its tmda field counts all vehicles, camion the trucks).
   Instituto Geográfico Nacional (wms.ign.gob.ar): provincia, localidad_bahra, bahra_paraje.
 
 The status table has no coordinates or progresivas, only a section name ("Cañuelas - Azul") and a
@@ -44,6 +45,7 @@ LAYERS = {
     "sv_red.json": ("https://sigvial.vialidad.gob.ar/geoserver/wfs", "dnv:Red_Vial_Ncional2025"),
     "sv_postes.json": ("https://sigvial.vialidad.gob.ar/geoserver/wfs", "dnv:Postes_Kilometricos_2025"),
     "sv_inter.json": ("https://sigvial.vialidad.gob.ar/geoserver/wfs", "dnv:Intersecciones_2025"),
+    "sv_tmda.json": ("https://sigvial.vialidad.gob.ar/geoserver/wfs", "dnv:TMDA_Vehículos_Pesados_2024"),
     "provincia.json": ("https://wms.ign.gob.ar/geoserver/ign/ows", "ign:provincia"),
     "localidad_bahra.json": ("https://wms.ign.gob.ar/geoserver/ign/ows", "ign:localidad_bahra"),
     "bahra_paraje.json": ("https://wms.ign.gob.ar/geoserver/ign/ows", "ign:bahra_paraje"),
@@ -239,6 +241,11 @@ class World:
                 t = tokens(p["fna"] or "")
                 if t:
                     self.places[prov_name(p["nom_pcia"])].append((t, (float(p["long_gd"]), float(p["lat_gd"]))))
+        self.tmda = defaultdict(list)  # route -> [(Line, tmda)]
+        for f in load("sv_tmda.json"):
+            p = f["properties"]
+            if f["geometry"] and p["tmda"]:
+                self.tmda[p["cod_ruta"]].append((Line([[c[:2] for c in part] for part in f["geometry"]["coordinates"]]), p["tmda"]))
         self._post_s = {}
         self._junction = {}
 
@@ -625,6 +632,28 @@ def place_group(world, secs):
 
 # ---------------------------------------------------------------------------------------------- output
 
+def traffic(world, code, parts):
+    """Length-weighted mean TMDA along a section, sampled every km; None if under 70% of it is covered."""
+    got, n = [], 0
+    for part in parts:
+        line = Line([part])
+        # every km from 0.25 km in; a part shorter than that gets one sample at its middle
+        at = [x + 0.25 for x in range(int(line.length - 0.25) + 1)] if line.length > 0.25 else [line.length / 2]
+        for s in at:
+            p = line.point_at(s)
+            n += 1
+            best = None
+            for seg, v in world.tmda.get(code, []):
+                x0, y0, x1, y1 = seg.bbox
+                if x0 - .01 <= p[0] <= x1 + .01 and y0 - .01 <= p[1] <= y1 + .01:
+                    d, _ = seg.locate(p)
+                    if d < 0.3 and (best is None or d < best[0]):
+                        best = (d, v)
+            if best:
+                got.append(best[1])
+    return round(sum(got) / len(got)) if n and len(got) >= 0.7 * n else None
+
+
 def enc(pts):
     """Delta-encode a line as integers of 1e-4 degrees: [x0, y0, dx, dy, ...]."""
     out, px, py = [], 0, 0
@@ -689,6 +718,7 @@ def build(repo, changes):
         row = {"key": key, "km": km, "old": key in old, **r}
         if "s0" in r:
             parts = world.lines[r["code"]].cut(r["s0"], r["s1"])
+            row["tmda"] = traffic(world, r["code"], parts)
             parts = [simplify(p, SIMPLIFY_KM) for p in parts]
             row["geo_km"] = length(parts)
             diff = None if km is None else row["geo_km"] - km
@@ -701,13 +731,60 @@ def build(repo, changes):
             if row["flag"] and r["conf"] == "alta":
                 row["conf"] = "media"
             sec = {"k": list(key), "c": row["conf"][0], "l": [enc(p) for p in parts]}
-            if key in old:
-                sec["old"] = 1
-            out_secs.append(sec)
+            if row["tmda"] is not None:
+                sec["t"] = row["tmda"]
+            if key not in old:  # retired sections are drawn only where no current section is (below)
+                out_secs.append(sec)
         rows.append(row)
 
-    geo = {"source": "Dirección Nacional de Vialidad, SIG Vial (Red Vial Nacional 2025); Instituto Geográfico Nacional",
-           "scale": 1e4, "provinces": outlines(world), "sections": out_secs}
+    # Retired sections are drawn only over the stretches no drawn current section covers (e.g. where the
+    # current sections could not be placed), so the map has neither overlaps nor holes.
+    placed_rows = {r["key"]: r for r in rows if "s0" in r}
+    drawn = {tuple(sec["k"]) for sec in out_secs}
+    for okey in sorted(old):
+        o = placed_rows.get(okey)
+        if not o:
+            continue
+        cover = sorted((c["s0"], c["s1"]) for k, c in placed_rows.items() if k in drawn and c["code"] == o["code"])
+        free, cur = [], o["s0"]
+        for a, b in cover:
+            if b <= cur or a >= o["s1"]:
+                continue
+            if a > cur:
+                free.append((cur, a))
+            cur = max(cur, b)
+        if cur < o["s1"]:
+            free.append((cur, o["s1"]))
+        parts = [p for a, b in free if b - a >= 2 for p in world.lines[o["code"]].cut(a, b)]
+        if parts:
+            parts = [simplify(p, SIMPLIFY_KM) for p in parts]
+            out_secs.append({"k": list(okey), "c": o["conf"][0], "old": 1, "l": [enc(p) for p in parts]})
+            drawn.add(okey)
+            o["gap_km"] = sum(b - a for a, b in free if b - a >= 2)
+
+    # Vialidad re-cut some routes (RN 3 and RN 40 in Santa Cruz). For each current section, the retired
+    # placed sections covering at least half of it, most overlap first; viz_data.py uses them for the days
+    # before the current section existed.
+    placed = placed_rows
+    by_key = {tuple(sec["k"]): sec for sec in out_secs if not sec.get("old")}
+    for key, sec in by_key.items():
+        c = placed[key]
+        prev = []
+        for okey in old:
+            o = placed.get(okey)
+            if o and o["code"] == c["code"]:
+                share = (min(c["s1"], o["s1"]) - max(c["s0"], o["s0"])) / (c["s1"] - c["s0"])
+                if share >= 0.5:
+                    prev.append((share, okey))
+        if prev:
+            sec["p"] = [list(k) for _, k in sorted(prev, reverse=True)]
+            placed[key]["prev"] = [k for _, k in sorted(prev, reverse=True)]
+
+    # traffic of retired sections that are not drawn, so viz_data.py can still weight their days
+    drawn_keys = {tuple(sec["k"]) for sec in out_secs}
+    extra = [[*r["key"], r["tmda"]] for r in rows if r["old"] and r.get("tmda") is not None and r["key"] not in drawn_keys]
+    geo = {"source": "Dirección Nacional de Vialidad, SIG Vial (Red Vial Nacional 2025, TMDA 2024); Instituto Geográfico Nacional",
+           "scale": 1e4, "provinces": outlines(world), "sections": out_secs, "tmda_retired": extra}
     OUT.write_text(json.dumps(geo, ensure_ascii=False, separators=(",", ":")))
     write_report(rows, world)
     crosscheck(rows, world)
@@ -729,12 +806,23 @@ def write_report(rows, world):
          f"- Ubicados con confianza alta (los dos extremos anclados y el largo coincide): {len(alta)}",
          f"- Ubicados por aproximación (interpolados o medidos en km desde un extremo anclado): {len(media)}",
          f"- Sin ubicar (no se dibujan): {len(missing)}",
-         f"- Con diferencia grande entre el largo dibujado y los km de la tabla: {len(flagged)}", "",
+         f"- Con diferencia grande entre el largo dibujado y los km de la tabla: {len(flagged)}",
+         f"- Ubicados con tránsito medio diario (TMDA 2024) asignado: {sum(1 for r in placed if r.get('tmda') is not None)}", "",
          "## Sin ubicar", "", "| Tramo | km tabla | Motivo |", "|---|---|---|"]
     L += [f"| {lab(r)} | {'' if r['km'] is None else r['km']} | {r['why']} |" for r in sorted(missing, key=lambda r: r["key"])]
     L += ["", "## Diferencias de largo", "", "Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%.", "",
           "| Tramo | km tabla | km dibujado | Extremos |", "|---|---|---|---|"]
     L += [f"| {lab(r)} | {r['km']} | {r['geo_km']:.1f} | {r['how']} |" for r in flagged]
+    merged = [r for r in rows if r.get("prev")]
+    L += ["", "## Historia de tramos dados de baja", "",
+          "Vialidad volvió a cortar algunas rutas en tramos nuevos. El mapa no dibuja los tramos dados de baja: sus días",
+          "pasan a los tramos actuales que cubren al menos la mitad del mismo recorrido, para las fechas anteriores a que existiera el tramo actual.", "",
+          "| Tramo actual | Toma la historia de |", "|---|---|"]
+    L += [f"| {lab(r)} | {'; '.join(k[2] for k in r['prev'])} |" for r in sorted(merged, key=lambda r: r["key"])]
+    gaps = [r for r in rows if r.get("gap_km")]
+    L += ["", "Tramos dados de baja que se dibujan igual, solo donde ningún tramo actual quedó ubicado:", "",
+          "| Tramo dado de baja | km dibujados |", "|---|---|"]
+    L += [f"| {lab(r)} | {r['gap_km']:.1f} |" for r in sorted(gaps, key=lambda r: r["key"])]
     L += ["", "## Ubicados por aproximación", "", "| Tramo | km tabla | km dibujado | Extremos |", "|---|---|---|---|"]
     L += [f"| {lab(r)} | {'' if r['km'] is None else r['km']} | {r['geo_km']:.1f} | {r['how']} |" for r in sorted(media, key=lambda r: r["key"])]
     L += ["", "## Ubicados con confianza alta", "", "| Tramo | km tabla | km dibujado | Extremos |", "|---|---|---|---|"]
