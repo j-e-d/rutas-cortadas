@@ -4,10 +4,10 @@ Generado por `scripts/geometry.py build`. Cada tramo de la tabla de Vialidad se 
 Red Vial Nacional 2025 (SIG Vial, DNV) buscando sus dos extremos.
 
 - Tramos: 682
-- Ubicados con confianza alta (los dos extremos anclados y el largo coincide): 442
-- Ubicados por aproximación (interpolados o medidos en km desde un extremo anclado): 193
+- Ubicados con confianza alta (los dos extremos anclados y el largo coincide): 443
+- Ubicados por aproximación (interpolados o medidos en km desde un extremo anclado): 192
 - Sin ubicar (no se dibujan): 47
-- Con diferencia grande entre el largo dibujado y los km de la tabla: 29
+- Con diferencia grande entre el largo dibujado y los km de la tabla: 28
 
 ## Sin ubicar
 
@@ -69,7 +69,7 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 |---|---|---|---|
 | RN 22 · Río Negro · Allen - Cipolletti | 355.0 | 15.5 | localidad / intersección DNV |
 | RN 40 · Salta · La Poma - La Quesera | 197.0 | 22.8 | localidad / localidad |
-| RN 9 · Salta · Lte. Con Tucuman - Emp. RN 34 | 182.0 | 54.7 | límite / intersección DNV |
+| RN 9 · Salta · Lte. Con Tucuman - Emp. RN 34 | 182.0 | 54.8 | límite / intersección DNV |
 | RN 95 · Santa Fe · Villa Minetti - Lte. Con Chaco | 164.5 | 98.1 | intersección DNV / límite |
 | RN 118 · Corrientes · San Miguel - Emp. RN 12 | 126.0 | 69.0 | localidad / cruce de rutas |
 | RN 7 · Mendoza · Polvaredas - Punta de Vacas | 51.0 | 12.8 | localidad / localidad |
@@ -79,10 +79,9 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 3 · Santa Cruz · Emp. RN 288 - Estancia Ototel Aike *(dado de baja)* | 102.5 | 80.2 | intersección DNV / interpolado |
 | RN 3 · Santa Cruz · Estancia Ototel Aike - Puesto Invernal Luis Trovato *(dado de baja)* | 76.0 | 59.4 | interpolado / interpolado |
 | RN A019 · Córdoba · Avda. Circunvalación de Córdoba | 30.0 | 46.6 | fin de ruta / fin de ruta |
-| RN 40 · Mendoza · Mendoza - Lte. Con San Juan | 76.0 | 92.5 | localidad / límite |
 | RN 3 · Santa Cruz · Puesto invernal Luis Trovato - Guer Aike *(dado de baja)* | 75.0 | 58.6 | interpolado / localidad |
 | RN 40 · Salta · La Quesera - Emp. RN 51 | 35.0 | 50.5 | localidad / intersección DNV |
-| RN 40 · San Juan · Lte. Con Mendoza - Va. Media Agua | 33.0 | 20.3 | límite / intersección DNV |
+| RN 40 · Salta · San Antonio De Los Cobres - Lte. Con Jujuy | 27.76 | 13.6 | localidad / límite |
 | RN 40 · Santa Cruz · Casa Riera - Emp. RPN°37 | 45.0 | 55.6 | intersección DNV / intersección DNV |
 | RN 7 · Mendoza · Punta De Vacas - Puente Del Inca | 26.0 | 15.6 | localidad / localidad |
 | RN 131 · Entre Ríos · Emp. RP 11 - Emp. RN 12 | 41.0 | 31.8 | intersección DNV / intersección DNV |
@@ -173,7 +172,7 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 154 · La Pampa · Cotita Emp. RN 35 - Emp. RP 28 | 36.3 | 36.3 | intersección DNV / interpolado |
 | RN 154 · La Pampa · Emp. RP 28 - Emp. RP 30 | 30.2 | 30.2 | interpolado / intersección DNV |
 | RN 188 · La Pampa · Lte. Bs. As./La Pampa - Emp. R.P.7 | 50.35 | 50.1 | extremo / intersección DNV |
-| RN 22 · La Pampa · Lte. Con Bs. As. - Lte. Con Río Negro | 63.71 | 61.0 | extremo / límite |
+| RN 22 · La Pampa · Lte. Con Bs. As. - Lte. Con Río Negro | 63.71 | 60.9 | extremo / límite |
 | RN 35 · La Pampa · Lte. Bs As - Bernasconi | 37.63 | 36.8 | extremo / localidad |
 | RN 5 · La Pampa · Lte. Bs. As - Emp. R.P. 3 | 42.89 | 43.0 | extremo / intersección DNV |
 | RN 40 · La Rioja · Cachiyuyal - Nonogasta | 24.0 | 23.9 | interpolado / localidad |
@@ -188,7 +187,6 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 145 · Mendoza · Paso Internacional El Pehuenche | 5.0 | 4.1 | interpolado / fin de ruta |
 | RN 40 · Mendoza · A. Hondo - Pareditas | 67.0 | 57.3 | interpolado / localidad |
 | RN 40 · Mendoza · Empalme RN 144 - A. Hondo | 96.0 | 82.0 | intersección DNV / interpolado |
-| RN 40 · Mendoza · Mendoza - Lte. Con San Juan | 76.0 | 92.5 | localidad / límite |
 | RN 7 · Mendoza · Lte.Con San Luis - Mendoza | 175.0 | 174.8 | límite / km desde ancla |
 | RN 7 · Mendoza · Polvaredas - Punta de Vacas | 51.0 | 12.8 | localidad / localidad |
 | RN 7 · Mendoza · Punta De Vacas - Puente Del Inca | 26.0 | 15.6 | localidad / localidad |
@@ -222,15 +220,15 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 40 · Salta · La Poma - La Quesera | 197.0 | 22.8 | localidad / localidad |
 | RN 40 · Salta · La Quesera - Emp. RN 51 | 35.0 | 50.5 | localidad / intersección DNV |
 | RN 40 · Salta · Lte. Con Tucuman - La Darsena | 57.0 | 52.9 | límite / interpolado |
+| RN 40 · Salta · San Antonio De Los Cobres - Lte. Con Jujuy | 27.76 | 13.6 | localidad / límite |
 | RN 68 · Salta · Talapampa - Rio Ancho | 61.4 | 61.0 | localidad / km desde ancla |
 | RN 9 · Salta · Emp. RN 34 - Torzalito | 125.0 | 122.6 | intersección DNV / interpolado |
-| RN 9 · Salta · Lte. Con Tucuman - Emp. RN 34 | 182.0 | 54.7 | límite / intersección DNV |
+| RN 9 · Salta · Lte. Con Tucuman - Emp. RN 34 | 182.0 | 54.8 | límite / intersección DNV |
 | RN 9 · Salta · Torzalito - Acc. Salta | 48.0 | 47.1 | interpolado / localidad |
 | RN 150 · San Juan · Jachal - Rodeo | 40.0 | 39.6 | localidad / interpolado |
 | RN 150 · San Juan · Rodeo - Las Flores | 23.0 | 23.1 | interpolado / intersección DNV |
 | RN 20 · San Juan · Caucete - Acc. Oeste SJ | 22.0 | 22.0 | localidad / km desde ancla |
 | RN 20 · San Juan · Km 578 - Km 582 (circunvalación) | 4.0 | 2.8 | km / extremo |
-| RN 40 · San Juan · Lte. Con Mendoza - Va. Media Agua | 33.0 | 20.3 | límite / intersección DNV |
 | RN 40 · San Juan · Matagusanos - Talacasto | 35.0 | 37.9 | interpolado / intersección DNV |
 | RN 40 · San Juan · San Juan - Matagusanos | 16.0 | 17.4 | localidad / interpolado |
 | RN 288 · Santa Cruz · Punta Quilla - Emp. RN º 3 | 41.0 | 41.0 | localidad / km desde ancla |
@@ -268,7 +266,7 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 1v09 · Santa Fe · Emp. RN 178 - Lte. Con Córdoba | 22.5 | 28.1 | intersección DNV / límite |
 | RN 33 · Santa Fe · Lte. Con Bs.As. - Rufino | 22.0 | 23.0 | extremo / localidad |
 | RN 7 · Santa Fe · Lte. Con Bs.As. - Lte. Con Cordoba | 56.13 | 57.2 | extremo / límite |
-| RN 8 · Santa Fe · Lte. Con Santafe - Lte. Con Cordoba | 118.0 | 112.7 | extremo / límite |
+| RN 8 · Santa Fe · Lte. Con Santafe - Lte. Con Cordoba | 118.0 | 118.4 | extremo / límite |
 | RN 9 · Santa Fe · Gral. Lagos - Rosario | 9.0 | 9.2 | interpolado / interpolado |
 | RN 9 · Santa Fe · Lte. Con Bs. As. - Gral. Lagos | 50.0 | 51.5 | extremo / interpolado |
 | RN 9 · Santa Fe · Rosario - Carcaraña | 39.63 | 40.8 | interpolado / localidad |
@@ -335,7 +333,7 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 35 · Buenos Aires · San Germán - Lte. La Pampa | 44.0 | 44.3 | localidad / límite |
 | RN 5 · Buenos Aires · Lujan - Lte. La Pampa | 458.0 | 458.4 | intersección DNV / límite |
 | RN 7 · Buenos Aires · Luján - Lte. Santa Fe | 308.0 | 306.6 | localidad / límite |
-| RN 8 · Buenos Aires · Pilar - Lte. Santa Fe | 226.0 | 234.9 | intersección DNV / límite |
+| RN 8 · Buenos Aires · Pilar - Lte. Santa Fe | 226.0 | 229.2 | intersección DNV / límite |
 | RN 9 · Buenos Aires · Campana - Lte. Santa Fe | 160.0 | 161.5 | intersección DNV / límite |
 | RN A-017 · Buenos Aires · RP N° 40(Merlo) - RN N° 3 (La Matanza) | 17.0 | 18.4 | intersección DNV / intersección DNV |
 | RN Au. Riccheri · Buenos Aires · AV. Gral. Paz - Aeropuerto Ezeiza | 14.0 | 15.1 | intersección DNV / localidad |
@@ -345,7 +343,7 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 40 · Catamarca · Santa María -Lte. Con Tucumán | 14.0 | 12.8 | localidad / límite |
 | RN 60 · Catamarca · Cortaderas - Lte. Int. Con Chile | 103.0 | 103.0 | localidad / frontera |
 | RN 60 · Catamarca · Emp. RN 157 - Emp RP 33 | 109.0 | 111.1 | intersección DNV / intersección DNV |
-| RN 60 · Catamarca · Emp. RN 38 - Lte. Con La Rioja | 42.0 | 42.9 | intersección DNV / límite |
+| RN 60 · Catamarca · Emp. RN 38 - Lte. Con La Rioja | 42.0 | 42.7 | intersección DNV / límite |
 | RN 60 · Catamarca · Emp. RP 33 - Emp. RN 38 | 60.0 | 60.7 | intersección DNV / intersección DNV |
 | RN 60 · Catamarca · Fiambalá - Cortaderas | 94.0 | 94.9 | localidad / localidad |
 | RN 60 · Catamarca · Lte. Con Córdoba - Emp. RN 157 | 9.0 | 8.1 | límite / intersección DNV |
@@ -400,7 +398,7 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 127 · Corrientes · Lte. Con Entre Ríos - Emp. RN 14 y 119 | 32.0 | 30.5 | límite / intersección DNV |
 | RN 14 · Corrientes · Bompland - Paso de los Libres | 28.0 | 24.8 | localidad / intersección DNV |
 | RN 14 · Corrientes · Cuatro Bocas - Bompland | 63.0 | 65.6 | localidad / localidad |
-| RN 14 · Corrientes · Gdor. Virasoro - Lte. Con Misiones | 37.0 | 37.0 | localidad / límite |
+| RN 14 · Corrientes · Gdor. Virasoro - Lte. Con Misiones | 37.0 | 36.7 | localidad / límite |
 | RN 14 · Corrientes · Lte. Entre Ríos - Cuatro Bocas | 62.0 | 62.6 | límite / localidad |
 | RN 14 · Corrientes · Paso de los Libres - Yapeyú | 55.0 | 54.7 | intersección DNV / intersección DNV |
 | RN 14 · Corrientes · Santo Tomé - Gdor. Virasoro | 63.0 | 62.0 | localidad / localidad |
@@ -463,14 +461,14 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 86 · Formosa · San Martin 2 - C. Zalazar | 63.23 | 63.7 | localidad / localidad |
 | RN 86 · Formosa · Villa Gral. Güemes - Fortin Leyes | 28.0 | 28.5 | localidad / localidad |
 | RN 95 · Formosa · Emp. RN 81 - Villa. Gral Güemes | 63.6 | 63.2 | intersección DNV / intersección DNV |
-| RN 34 · Jujuy · Acc. a San Pedro -Lte. Con Salta | 91.0 | 93.8 | localidad / límite |
+| RN 34 · Jujuy · Acc. a San Pedro -Lte. Con Salta | 91.0 | 93.6 | localidad / límite |
 | RN 34 · Jujuy · Lte. Con Salta - Acc. Norte a San Pedro | 37.0 | 44.1 | límite / localidad |
-| RN 40 · Jujuy · Lte. Con Salta - Emp. RN 9 | 408.0 | 399.6 | límite / intersección DNV |
+| RN 40 · Jujuy · Lte. Con Salta - Emp. RN 9 | 408.0 | 399.5 | límite / intersección DNV |
 | RN 52 · Jujuy · Emp. RN 9- Purmamarca | 3.5 | 3.2 | intersección DNV / localidad |
 | RN 52 · Jujuy · Purmamarca - Emp. RP 79 | 59.0 | 57.5 | localidad / intersección DNV |
 | RN 9 · Jujuy · Abra Pampa - Lte. C/Bolivia | 71.0 | 74.4 | localidad / frontera |
 | RN 9 · Jujuy · Acc. a Iturbe - Abra Pampa | 60.0 | 58.8 | intersección DNV / localidad |
-| RN 9 · Jujuy · Lte. Salta - Acc. a Dique La Ciénaga | 13.6 | 12.8 | límite / localidad |
+| RN 9 · Jujuy · Lte. Salta - Acc. a Dique La Ciénaga | 13.6 | 12.9 | límite / localidad |
 | RN 9 · Jujuy · S.S. de Jujuy -Yala | 14.0 | 14.1 | localidad / localidad |
 | RN 9 · Jujuy · Volcán - Emp. RN 52 | 20.0 | 20.1 | localidad / intersección DNV |
 | RN 9 · Jujuy · Yala - Volcán | 31.0 | 26.1 | localidad / localidad |
@@ -540,10 +538,10 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 144 · Mendoza · San Rafael - Las Salinas | 70.0 | 59.1 | intersección DNV / localidad |
 | RN 145 · Mendoza · Bardas Blancas - Las Loicas | 35.0 | 34.4 | localidad / localidad |
 | RN 145 · Mendoza · Las Loicas - Cajón Grande | 30.0 | 26.8 | localidad / localidad |
-| RN 146 · Mendoza · Lte. con San Luis - Monte Coman | 124.0 | 121.3 | límite / localidad |
+| RN 146 · Mendoza · Lte. con San Luis - Monte Coman | 124.0 | 121.6 | límite / localidad |
 | RN 146 · Mendoza · San Rafael - Monte Coman | 57.51 | 54.6 | intersección DNV / localidad |
 | RN 149 · Mendoza · Uspallata - Lte. Con San Juan | 60.0 | 60.6 | intersección DNV / límite |
-| RN 153 · Mendoza · Lte. Con San Juan - Int. RN 149 | 54.5 | 51.2 | límite / intersección DNV |
+| RN 153 · Mendoza · Lte. Con San Juan - Int. RN 149 | 54.5 | 51.3 | límite / intersección DNV |
 | RN 188 · Mendoza · General Alvear - Malargue | 230.0 | 224.6 | localidad / intersección DNV |
 | RN 188 · Mendoza · Lte. Con San Luis - Gral. Alvear | 111.0 | 111.5 | límite / localidad |
 | RN 40 · Mendoza · Bardas Blancas - Malargüe | 62.7 | 66.1 | localidad / localidad |
@@ -551,6 +549,7 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 40 · Mendoza · La Pasarela - Bardas Blancas | 56.7 | 56.3 | localidad / localidad |
 | RN 40 · Mendoza · Lte. Con Neuquen - Emp. RP 221 | 35.7 | 35.1 | límite / intersección DNV |
 | RN 40 · Mendoza · Malargüe - Emp. RN 144 | 58.3 | 60.0 | localidad / intersección DNV |
+| RN 40 · Mendoza · Mendoza - Lte. Con San Juan | 76.0 | 80.4 | localidad / límite |
 | RN 40 · Mendoza · Pareditas - Tunuyan | 37.8 | 41.2 | localidad / localidad |
 | RN 40 · Mendoza · Tunuyan - Mendoza | 87.0 | 80.8 | localidad / localidad |
 | RN 7 · Mendoza · Empalme RN 40 - Potrerillos | 46.0 | 40.5 | intersección DNV / intersección DNV |
@@ -567,7 +566,7 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 14 · Misiones · Campo Grande - San Vicente | 61.0 | 61.9 | intersección DNV / localidad |
 | RN 14 · Misiones · Emp. RP 17 - Bernardo De Irigoyen | 11.0 | 10.8 | intersección DNV / localidad |
 | RN 14 · Misiones · Gramado - Piñalito | 35.0 | 32.3 | intersección DNV / localidad |
-| RN 14 · Misiones · Lte. Con Corrientes - San José | 7.3 | 4.8 | límite / localidad |
+| RN 14 · Misiones · Lte. Con Corrientes - San José | 7.3 | 5.1 | límite / localidad |
 | RN 14 · Misiones · Oberá - Campo Grande | 40.0 | 38.9 | intersección DNV / intersección DNV |
 | RN 14 · Misiones · Piñalito - Emp. RP 17 | 21.5 | 23.9 | localidad / intersección DNV |
 | RN 14 · Misiones · San José - Oberá | 77.0 | 80.1 | localidad / intersección DNV |
@@ -580,7 +579,7 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 40 · Neuquén · Emp. RN 231 - Lago Villarino | 43.77 | 47.4 | intersección DNV / localidad |
 | RN 40 · Neuquén · Lago Villarino- San Martín de los Andes | 43.16 | 48.2 | localidad / localidad |
 | RN 40 · Neuquén · Las Lajas - Chos Malal | 142.27 | 156.4 | localidad / localidad |
-| RN 40 · Neuquén · Lte. con Río Negro - Emp. RN 231 | 68.46 | 74.5 | límite / intersección DNV |
+| RN 40 · Neuquén · Lte. con Río Negro - Emp. RN 231 | 68.46 | 74.4 | límite / intersección DNV |
 | RN 40 · Neuquén · Rinconada - Catan Lil | 35.45 | 39.6 | intersección DNV / localidad |
 | RN 40 · Neuquén · San Martín de los Andes - Rinconada | 66.01 | 70.8 | localidad / intersección DNV |
 | RN 40 · Neuquén · Zapala - Las Lajas | 49.01 | 56.1 | localidad / localidad |
@@ -607,11 +606,10 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 16 · Salta · Lte. Con Chaco - El Quebrachal | 71.5 | 75.4 | límite / localidad |
 | RN 34 · Salta · Embarcación - Gral. E. Mosconi | 79.5 | 78.6 | localidad / localidad |
 | RN 34 · Salta · Gral. E. Mosconi - Tartagal | 10.0 | 9.5 | localidad / intersección DNV |
-| RN 34 · Salta · Lte. Con Jujuy - Pichanal | 40.0 | 39.7 | límite / localidad |
+| RN 34 · Salta · Lte. Con Jujuy - Pichanal | 40.0 | 39.9 | límite / localidad |
 | RN 34 · Salta · Pichanal - Embarcación | 19.9 | 19.1 | localidad / localidad |
 | RN 34 · Salta · Tartagal - Lte. Con Bolivia | 57.0 | 54.0 | intersección DNV / frontera |
 | RN 40 · Salta · Cachi - La Poma | 52.12 | 53.7 | localidad / localidad |
-| RN 40 · Salta · San Antonio De Los Cobres - Lte. Con Jujuy | 27.76 | 24.0 | localidad / límite |
 | RN 40 · Salta · Seclantas - Cachi | 29.0 | 28.2 | localidad / localidad |
 | RN 50 · Salta · Acc. a Oran - Lte. Con Bolivia | 46.0 | 48.3 | localidad / frontera |
 | RN 50 · Salta · Emp. RN 34 - Acc. a Oran | 28.0 | 23.7 | intersección DNV / localidad |
@@ -631,22 +629,23 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 150 · San Juan · Ischigualasto - Huaco | 85.0 | 83.3 | localidad / intersección DNV |
 | RN 150 · San Juan · Las Flores - Arrequintin | 37.0 | 37.3 | intersección DNV / localidad |
 | RN 150 · San Juan · Lte. Con La Rioja - Ischigualasto | 21.0 | 17.4 | límite / localidad |
-| RN 153 · San Juan · Km 57,80 - Lte. Con Mendoza | 42.0 | 43.6 | km / límite |
+| RN 153 · San Juan · Km 57,80 - Lte. Con Mendoza | 42.0 | 43.5 | km / límite |
 | RN 20 · San Juan · Encon - Las Casuarinas | 60.0 | 59.3 | localidad / intersección DNV |
 | RN 20 · San Juan · Las Casuarinas - Caucete | 26.0 | 26.8 | intersección DNV / localidad |
 | RN 20 · San Juan · Lte. Con S.Luis - Encon | 56.0 | 55.7 | límite / localidad |
 | RN 40 · San Juan · Huaco - Lte. Con La Rioja | 62.0 | 61.0 | intersección DNV / límite |
 | RN 40 · San Juan · Jachal - Huaco | 40.0 | 38.9 | intersección DNV / intersección DNV |
+| RN 40 · San Juan · Lte. Con Mendoza - Va. Media Agua | 33.0 | 32.4 | límite / intersección DNV |
 | RN 40 · San Juan · Talacasto -Tucunuco | 57.0 | 56.3 | intersección DNV / localidad |
 | RN 40 · San Juan · Tucunuco - Jachal | 34.0 | 33.9 | localidad / intersección DNV |
 | RN 40 · San Juan · Va. Media Agua-Acc. Sur San Juan | 51.0 | 53.2 | intersección DNV / localidad |
 | RN A014 · San Juan · Av. De Circunvalación | 15.0 | 15.9 | fin de ruta / fin de ruta |
-| RN 146 · San Luis · Emp. RN 7 - Lte. Con Mendoza | 93.0 | 95.6 | intersección DNV / límite |
+| RN 146 · San Luis · Emp. RN 7 - Lte. Con Mendoza | 93.0 | 95.4 | intersección DNV / límite |
 | RN 146 · San Luis · Lujan - Emp. RN 147 | 120.0 | 117.7 | intersección DNV / intersección DNV |
 | RN 147 · San Luis · Emp.RN V146 - La Chañarienta | 118.0 | 118.0 | intersección DNV / intersección DNV |
 | RN 188 · San Luis · Lte. Con La Pampa - Lte. Con Mendoza | 127.0 | 126.2 | límite / límite |
 | RN 20 · San Luis · Lte. Con Cordoba - Lte. Con San Juan | 198.0 | 197.2 | límite / límite |
-| RN 7 · San Luis · Lte. Con Córdoba - Lte. Con Mendoza | 211.0 | 211.7 | límite / límite |
+| RN 7 · San Luis · Lte. Con Córdoba - Lte. Con Mendoza | 211.0 | 211.5 | límite / límite |
 | RN 79 · San Luis · Emp. RN 20 - Lte. Con La Rioja | 40.0 | 40.8 | intersección DNV / límite |
 | RN 8 · San Luis · Lte. Cordoba - Villa Mercedes | 33.0 | 33.1 | límite / intersección DNV |
 | RN V146 · San Luis · Emp. RN 147 - Emp. RN 7 | 9.87 | 9.8 | intersección DNV / intersección DNV |
@@ -737,7 +736,7 @@ Largo dibujado contra km de la tabla, cuando difieren más de 3 km y más de 20%
 | RN 38 · Tucumán · Monteros - Famaillá | 15.65 | 15.1 | localidad / localidad |
 | RN 40 · Tucumán · Colalao del Valle - Lte. Con Salta | 8.0 | 9.4 | localidad / límite |
 | RN 65 · Tucumán · Int. R.N.N°38 Concepción - Alpachiri | 18.33 | 17.2 | intersección DNV / localidad |
-| RN 9 · Tucumán · Acc. a El Cadillal - Lte. Con Salta | 57.0 | 56.6 | localidad / límite |
+| RN 9 · Tucumán · Acc. a El Cadillal - Lte. Con Salta | 57.0 | 56.5 | localidad / límite |
 | RN 9 · Tucumán · Lte. Con Sgo. Del Estero - San Andres | 61.35 | 61.2 | límite / localidad |
 | RN 9 · Tucumán · San Andres - S. M. de Tucumán (san Cayetano) | 3.8 | 4.2 | localidad / localidad |
 | RN A016 · Tucumán · Acc. a Alderetes- S. M. de Tucumán | 4.68 | 3.7 | localidad / localidad |

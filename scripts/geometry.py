@@ -219,8 +219,7 @@ class World:
         for f in provs:
             g = f["geometry"]
             polys = g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]
-            keep = [[[c[:2] for c in ring[::max(1, len(ring) // 4000)]] + [ring[0][:2]] for ring in poly[:1]]
-                    for poly in polys if len(poly[0]) > 200]
+            keep = [[thin(poly[0], 0.3)] for poly in polys if len(poly[0]) > 200]
             coarse.append({"properties": f["properties"], "geometry": {"type": "MultiPolygon", "coordinates": keep}})
         self.polys = Polys(coarse, "nam")
         self.runs = {}
@@ -322,6 +321,17 @@ class World:
                 out += [(a + b) / 2] if b - a < 1.5 else [a, b]
             self._junction[key] = out
         return [s for s in self._junction[key] if lo - 1 <= s <= hi + 1]
+
+
+def thin(ring, km):
+    """Drop vertices closer than `km` to the last kept one. Unlike taking every n-th vertex, this keeps the
+    lone corner vertices of straight borders."""
+    out = [tuple(ring[0][:2])]
+    for c in ring[1:-1]:
+        if abs(c[1] - out[-1][1]) * 111.2 > km or hav(out[-1], c) > km:
+            out.append(tuple(c[:2]))
+    out.append(tuple(ring[-1][:2]))
+    return out
 
 
 def prov_name(n):
@@ -638,12 +648,19 @@ def outlines(world):
             # outside the map's extent
             if len(ring) < 40 or min(c[1] for c in ring) < -56.5 or min(c[0] for c in ring) > -52:
                 continue
-            ring = ring[::max(1, len(ring) // 20000)] + [ring[0]]
+            ring = thin(ring, 0.1)
             if length([ring]) < MIN_ISLAND_KM:
                 continue
             s = simplify(ring, OUTLINE_KM)
             if len(s) >= 4:
-                rings.append(enc(s))
+                # borders that follow a parallel or meridian are curves in the map's projection: add points
+                # along long segments so two neighbouring provinces draw the same line
+                dense = [s[0]]
+                for a, b in zip(s, s[1:]):
+                    n = int(hav(a, b) // 20)
+                    dense += [(a[0] + (b[0] - a[0]) * i / (n + 1), a[1] + (b[1] - a[1]) * i / (n + 1)) for i in range(1, n + 1)]
+                    dense.append(b)
+                rings.append(enc(dense))
     return rings
 
 

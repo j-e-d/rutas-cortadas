@@ -261,7 +261,7 @@ const MAP = (()=>{
   const secs=GEO.sections.map(s=>{ const key=s.k.join("|"), t=tot.get(key), parts=s.l.map(dec);
     let bx0=1e9,by0=1e9,bx1=-1e9,by1=-1e9;
     parts.forEach(r=>{ for(let i=0;i<r.length;i+=2){ bx0=Math.min(bx0,r[i]); bx1=Math.max(bx1,r[i]); by0=Math.min(by0,r[i+1]); by1=Math.max(by1,r[i+1]); } });
-    return {k:s.k, parts, approx:s.c==="m", old:!!s.old, days:t?t[3]:0, closed:t?t[4]:0, cause:t?t[5]:-1, perm:perm.get(key), box:[bx0,by0,bx1,by1]}; })
+    return {k:s.k, parts, old:!!s.old, days:t?t[3]:0, closed:t?t[4]:0, cause:t?t[5]:-1, perm:perm.get(key), box:[bx0,by0,bx1,by1]}; })
     .filter(s=>!s.old||s.days>0||s.perm);
   // draw order: open sections first, then by days so the worst end up on top
   secs.sort((a,b)=>(a.perm?-1:a.days)-(b.perm?-1:b.days));
@@ -307,7 +307,6 @@ const MAP = (()=>{
     else if(s.days>0) t+=`\n${days(s.days)} días no habilitado\n${days(s.closed)} con corte total\nCausa principal: ${D.causes[s.cause]}`;
     else t+=`\nSin días afectados en el período`;
     if(s.old) t+=`\nTramo que ya no figura en la tabla`;
-    if(s.approx) t+=`\nUbicación aproximada sobre la traza`;
     return t; }
   function point(e){ const r=cv.getBoundingClientRect(), s=pick(e.clientX-r.left,e.clientY-r.top);
     if(s!==hover){ hover=s; draw(); } s?showTip(e,text(s)):hideTip(); }
